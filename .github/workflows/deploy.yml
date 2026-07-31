@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: firebase-deploy
+  cancel-in-progress: true
+
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
@@ -26,10 +30,38 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Deploy to Firebase Hosting
-        uses: FirebaseExtended/action-hosting-deploy@v0
+      - name: Verify service account secret
+        shell: bash
+        env:
+          SA_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          node -e '
+            let j;
+            try {
+              j = JSON.parse(process.env.SA_JSON);
+            } catch (e) {
+              console.error("FIREBASE_SERVICE_ACCOUNT is not valid JSON:", e.message);
+              process.exit(1);
+            }
+            console.log("project_id: " + j.project_id);
+            console.log("client_email: " + j.client_email);
+            console.log("private_key present: " + !!j.private_key);
+            console.log("type: " + j.type);
+            if (j.project_id !== "prodsystem-488bf") {
+              console.error("ERROR: secret belongs to project " + j.project_id + " but workflow expects prodsystem-488bf");
+              process.exit(1);
+            }
+            if (!j.private_key) {
+              console.error("ERROR: secret has no private_key field");
+              process.exit(1);
+            }
+            console.log("Secret OK - matches prodsystem-488bf");
+          '
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          projectId: prodsystem-488bf
-          channelId: live
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      - name: Deploy to Firebase Hosting
+        run: npx --yes firebase-tools@latest deploy --only hosting --project prodsystem-488bf --non-interactive
