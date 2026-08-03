@@ -16,9 +16,12 @@ export function StagePage({
 }) {
   return (
     <PageShell title={title} breadcrumb={["CCB", group, title]} action={action}>
-      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
         {metrics.map((m) => (
-          <div key={m.label} className="rounded-lg border border-border bg-card px-4 py-3.5 shadow-panel">
+          <div
+            key={m.label}
+            className="rounded-[14px] border border-[rgba(15,23,42,0.06)] bg-card px-5 py-4 shadow-panel"
+          >
             <p className="truncate text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
               {m.label}
             </p>

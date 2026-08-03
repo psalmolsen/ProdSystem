@@ -27,8 +27,8 @@ export function CylinderPanel({
         className="absolute inset-0 bg-foreground/25 animate-in fade-in duration-150"
         onClick={onClose}
       />
-      <aside className="absolute right-0 top-0 flex h-full w-full max-w-[520px] flex-col border-l border-border bg-card shadow-raised animate-in slide-in-from-right duration-200">
-        <header className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
+      <aside className="absolute right-0 top-0 flex h-full w-full max-w-[520px] flex-col border-l border-[rgba(255,255,255,0.5)] bg-[rgba(255,255,255,0.75)] shadow-large backdrop-blur-[20px] animate-in slide-in-from-right duration-200">
+        <header className="flex items-start justify-between gap-4 border-b border-[rgba(15,23,42,0.06)] px-6 py-5">
           <div className="min-w-0">
             <p className="eyebrow">Cylinder</p>
             <h2 className="truncate text-lg font-semibold tabular">{cylinder.serial}</h2>
@@ -37,16 +37,13 @@ export function CylinderPanel({
               <span className="text-xs text-muted-foreground">Updated {cylinder.updated}</span>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-border text-muted-foreground hover:bg-accent"
-          >
-            <X className="h-4 w-4" strokeWidth={1.75} />
+          <button onClick={onClose} className="btn-icon shrink-0">
+            <X className="h-[18px] w-[18px]" strokeWidth={1.75} />
           </button>
         </header>
 
         <div className="flex-1 overflow-y-auto">
-          <div className="border-b border-border px-6 py-5">
+          <div className="border-b border-[rgba(15,23,42,0.06)] px-6 py-5">
             <p className="eyebrow mb-3">Cylinder information</p>
             <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
               <Field label="Barcode" value={cylinder.barcode} />
@@ -62,12 +59,12 @@ export function CylinderPanel({
             </dl>
           </div>
 
-          <div className="border-b border-border px-6 py-5">
+          <div className="border-b border-[rgba(15,23,42,0.06)] px-6 py-5">
             <p className="eyebrow mb-4">Movement timeline</p>
-            <ol className="relative space-y-5 border-l border-border pl-5">
+            <ol className="relative space-y-5 border-l border-[rgba(15,23,42,0.08)] pl-5">
               {TIMELINE.map((t) => (
                 <li key={t.stage} className="relative">
-                  <span className="absolute -left-[25px] top-1 h-2 w-2 rounded-full bg-primary ring-4 ring-accent" />
+                  <span className="absolute -left-[25px] top-1 h-2 w-2 rounded-full bg-gradient-to-b from-[#3b82f6] to-[#2563eb] ring-4 ring-[#eef2ff]" />
                   <div className="flex items-baseline justify-between gap-3">
                     <p className="text-[13px] font-medium">{t.stage}</p>
                     <span className="text-[11px] text-muted-foreground tabular">{t.time}</span>
@@ -79,7 +76,7 @@ export function CylinderPanel({
             </ol>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 border-b border-border px-6 py-5">
+          <div className="grid grid-cols-2 gap-3 border-b border-[rgba(15,23,42,0.06)] px-6 py-5">
             {[
               { icon: ClipboardCheck, label: "Inspection history", value: "4 records" },
               { icon: Wrench, label: "Repair & valve history", value: "2 records" },
@@ -88,9 +85,9 @@ export function CylinderPanel({
             ].map((c) => (
               <button
                 key={c.label}
-                className="flex items-center gap-3 rounded-md border border-border px-3 py-3 text-left hover:bg-accent"
+                className="flex items-center gap-3 rounded-[14px] border border-[rgba(15,23,42,0.08)] bg-white px-3 py-3 text-left transition-colors duration-150 hover:bg-[#eef2ff]"
               >
-                <c.icon className="h-4 w-4 shrink-0 text-primary" strokeWidth={1.75} />
+                <c.icon className="h-4 w-4 shrink-0 text-[#2563eb]" strokeWidth={1.75} />
                 <span className="min-w-0">
                   <span className="block truncate text-[13px] font-medium">{c.label}</span>
                   <span className="block text-[11px] text-muted-foreground">{c.value}</span>
@@ -100,17 +97,18 @@ export function CylinderPanel({
           </div>
         </div>
 
-        <footer className="flex items-center gap-2 border-t border-border px-6 py-4">
-          <button className="h-9 flex-1 rounded-md bg-primary px-3 text-[13px] font-medium text-primary-foreground hover:bg-primary-dark">
+        <footer className="flex items-center gap-2.5 border-t border-[rgba(15,23,42,0.06)] bg-white/60 px-6 py-4">
+          <button className="btn-primary flex-1">
             Advance to next stage
           </button>
-          <button className="h-9 rounded-md border border-border px-3 text-[13px] font-medium hover:bg-accent">
+          <button className="btn-secondary">
             Flag rework
           </button>
-          <button className="grid h-9 w-9 place-items-center rounded-md border border-border text-muted-foreground hover:bg-accent">
-            <Printer className="h-4 w-4" strokeWidth={1.75} />
+          <button className="btn-icon shrink-0">
+            <Printer className="h-[18px] w-[18px]" strokeWidth={1.75} />
           </button>
         </footer>
+      </aside>
       </aside>
     </div>
   );
