@@ -5,16 +5,17 @@ import {
   createJobOrder,
   ensureSeed,
   getBottleneckSubProcess,
+  getGoodTotalsByStep,
   getTotalsByStep,
   listJobOrders,
 } from "@/services/trackerService";
-// CreateEntryInput now includes timeSlot and entryDate — no hook changes needed.
 
 export interface TrackerState {
   jobOrders: JobOrder[];
   selectedJobOrderId: string | null;
   setSelectedJobOrderId: (id: string | null) => void;
   totals: Record<string, number>;
+  goodTotals: Record<string, number>;
   overload: Bottleneck | null;
   addEntry: (input: CreateEntryInput) => void;
   addJobOrder: (workOrderNumber: string, brandName: string) => JobOrder;
@@ -43,6 +44,11 @@ export function useTracker(): TrackerState {
 
   const totals = useMemo(
     () => (selectedJobOrderId ? getTotalsByStep(selectedJobOrderId) : {}),
+    [selectedJobOrderId, refreshKey],
+  );
+
+  const goodTotals = useMemo(
+    () => (selectedJobOrderId ? getGoodTotalsByStep(selectedJobOrderId) : {}),
     [selectedJobOrderId, refreshKey],
   );
 

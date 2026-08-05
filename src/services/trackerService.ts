@@ -64,6 +64,7 @@ export function createEntry(input: CreateEntryInput): Entry {
     station: input.station,
     subProcess: input.subProcess,
     personnelName: input.personnelName.trim(),
+    good: Math.max(0, Math.round(input.good ?? input.output)),
     output: Math.max(0, Math.round(input.output)),
     timeSlot: input.timeSlot,
     entryDate: input.entryDate,
@@ -103,6 +104,15 @@ export function getTotalsByStep(jobOrderId: string): Record<string, number> {
   for (const step of FLAT_STEPS) totals[step.key] = 0;
   for (const entry of getEntriesForJobOrder(jobOrderId)) {
     totals[stepKey(entry.station, entry.subProcess)] += entry.output;
+  }
+  return totals;
+}
+
+export function getGoodTotalsByStep(jobOrderId: string): Record<string, number> {
+  const totals: Record<string, number> = {};
+  for (const step of FLAT_STEPS) totals[step.key] = 0;
+  for (const entry of getEntriesForJobOrder(jobOrderId)) {
+    totals[stepKey(entry.station, entry.subProcess)] += entry.good ?? entry.output;
   }
   return totals;
 }
@@ -232,6 +242,8 @@ const SEED_PLANS: SeedPlan[] = [
       "Cosmetics::Tacking/Weighing":   36,
       "Cosmetics::Brand Label":        32,
       "Cosmetics::TW/Warning/RQ":      28,
+      "Cosmetics::Final QC":           26,
+      "Cosmetics::Good":               24,
     },
   },
 ];
@@ -261,6 +273,7 @@ function seedEntries(order: JobOrder, plan: SeedPlan): void {
           station: station.id,
           subProcess,
           personnelName: pool[i % pool.length],
+          good: out,
           output: out,
           timeSlot: SEED_SLOTS[slotIndex],
           entryDate: today,

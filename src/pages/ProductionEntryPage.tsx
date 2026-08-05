@@ -340,7 +340,7 @@ export function ProductionEntryPage() {
                               onChange={(e) =>
                                 updateRow(station.id, row.subProcess, "personnel", e.target.value)
                               }
-                              placeholder="Name (optional)"
+                              placeholder="Name"
                               className="input-field"
                             />
                           </div>

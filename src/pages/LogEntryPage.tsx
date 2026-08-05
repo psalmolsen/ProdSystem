@@ -1,6 +1,14 @@
 import { useState, useEffect, useMemo, useId } from "react";
 import type { FormEvent } from "react";
-import { CheckCircle2, Plus } from "lucide-react";
+import {
+  CheckCircle2,
+  Plus,
+  ClipboardCheck,
+  GaugeCircle,
+  Wrench,
+  PaintRoller,
+  Droplets,
+} from "lucide-react";
 import { PageShell, Panel } from "@/components/app/page-shell";
 import { STATIONS, TIME_SLOTS } from "@/config/stations";
 import type { TimeSlot } from "@/config/stations";
@@ -8,7 +16,70 @@ import type { StationId } from "@/types/tracker";
 import { useTracker } from "@/hooks/useTracker";
 import { cn } from "@/lib/utils";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// ── Dept tab config ────────────────────────────────────────────────────────────
+const DEPT_TABS: {
+  id: StationId;
+  label: string;
+  short: string;
+  icon: typeof ClipboardCheck;
+  color: string;
+  activeBg: string;
+  activeText: string;
+  activeBorder: string;
+}[] = [
+  {
+    id: "CTC1",
+    label: "CTC 1",
+    short: "CTC1",
+    icon: ClipboardCheck,
+    color: "#0071E3",
+    activeBg: "rgba(0,113,227,0.10)",
+    activeText: "#0071E3",
+    activeBorder: "#0071E3",
+  },
+  {
+    id: "CTC2",
+    label: "CTC 2",
+    short: "CTC2",
+    icon: GaugeCircle,
+    color: "#5856D6",
+    activeBg: "rgba(88,86,214,0.10)",
+    activeText: "#5856D6",
+    activeBorder: "#5856D6",
+  },
+  {
+    id: "Hotworks",
+    label: "Hotworks",
+    short: "HW",
+    icon: Wrench,
+    color: "#FF9500",
+    activeBg: "rgba(255,149,0,0.10)",
+    activeText: "#FF9500",
+    activeBorder: "#FF9500",
+  },
+  {
+    id: "Painting",
+    label: "Painting",
+    short: "PNT",
+    icon: PaintRoller,
+    color: "#34C759",
+    activeBg: "rgba(52,199,89,0.10)",
+    activeText: "#34C759",
+    activeBorder: "#34C759",
+  },
+  {
+    id: "Cosmetics",
+    label: "Cosmetics",
+    short: "CSM",
+    icon: Droplets,
+    color: "#FF375F",
+    activeBg: "rgba(255,55,95,0.10)",
+    activeText: "#FF375F",
+    activeBorder: "#FF375F",
+  },
+];
+
+// ── Types ──────────────────────────────────────────────────────────────────────
 interface ProcessRow {
   subProcess: string;
   output: string;
@@ -19,31 +90,36 @@ interface FormErrors {
   jobOrder?: string;
   date?: string;
   timeSlot?: string;
-  rows?: string; // at least one row must have data
+  rows?: string;
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 function todayValue(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-// ── DeptEntryPage ─────────────────────────────────────────────────────────────
-export function DeptEntryPage({ stationId }: { stationId: StationId }) {
-  const station = STATIONS.find((s) => s.id === stationId)!;
+// ── LogEntryPage ───────────────────────────────────────────────────────────────
+export function LogEntryPage() {
   const { jobOrders, addEntry, addJobOrder } = useTracker();
+  const uid = useId();
 
-  // ── Header state ────────────────────────────────────────────────────────────
+  // ── Dept selection ─────────────────────────────────────────────────────────
+  const [activeDeptId, setActiveDeptId] = useState<StationId>("CTC1");
+  const activeDept = useMemo(
+    () => DEPT_TABS.find((d) => d.id === activeDeptId) || DEPT_TABS[0],
+    [activeDeptId],
+  );
+
+  // ── Header state ───────────────────────────────────────────────────────────
   const [selectedJoId, setSelectedJoId] = useState<string>("");
   const [joNumber, setJoNumber] = useState<string>("");
   const [workOrderCnf, setWorkOrderCnf] = useState<string>("");
   const [workOrderCf, setWorkOrderCf] = useState<string>("");
   const [workOrderC, setWorkOrderC] = useState<string>("");
   const [brandName, setBrandName] = useState<string>("");
-  const [date,     setDate]     = useState(todayValue());
+  const [date, setDate] = useState(todayValue());
   const [timeSlot, setTimeSlot] = useState<TimeSlot | "">("");
-  const [errors,   setErrors]   = useState<FormErrors>({});
-  const [saved,    setSaved]    = useState(false);
-  const uid = useId();
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [saved, setSaved] = useState(false);
 
   // Auto-select first JO on load
   useEffect(() => {
@@ -96,30 +172,49 @@ export function DeptEntryPage({ stationId }: { stationId: StationId }) {
     }
   };
 
-  // ── Process rows state ───────────────────────────────────────────────────────
-  const [rows, setRows] = useState<ProcessRow[]>(() =>
-    station.subProcesses.map((sp) => ({ subProcess: sp, output: "", personnel: "" })),
-  );
+  // ── Process rows per department ────────────────────────────────────────────
+  const [allDeptRows, setAllDeptRows] = useState<Record<StationId, ProcessRow[]>>(() => {
+    const initial: Partial<Record<StationId, ProcessRow[]>> = {};
+    for (const station of STATIONS) {
+      initial[station.id] = station.subProcesses.map((sp) => ({
+        subProcess: sp,
+        output: "",
+        personnel: "",
+      }));
+    }
+    return initial as Record<StationId, ProcessRow[]>;
+  });
 
-  // Reset rows when station changes (if this component is reused)
-  useEffect(() => {
-    setRows(station.subProcesses.map((sp) => ({ subProcess: sp, output: "", personnel: "" })));
-    setSaved(false);
-    setErrors({});
-  }, [stationId, station.subProcesses]);
-
-  const updateRow = (index: number, field: keyof Omit<ProcessRow, "subProcess">, value: string) => {
-    setRows((prev) =>
-      prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)),
-    );
-  };
+  const rows = allDeptRows[activeDeptId] || [];
 
   const isRowFilled = (r: ProcessRow) => {
     const out = Number(r.output.trim());
     return r.output.trim() !== "" && out > 0;
   };
 
-  // ── Submit ───────────────────────────────────────────────────────────────────
+  const totalFilledCount = useMemo(() => {
+    let count = 0;
+    for (const station of STATIONS) {
+      const deptRows = allDeptRows[station.id] || [];
+      count += deptRows.filter(isRowFilled).length;
+    }
+    return count;
+  }, [allDeptRows]);
+
+  const updateRow = (
+    index: number,
+    field: keyof Omit<ProcessRow, "subProcess">,
+    value: string,
+  ) => {
+    setAllDeptRows((prev) => ({
+      ...prev,
+      [activeDeptId]: prev[activeDeptId].map((row, i) =>
+        i === index ? { ...row, [field]: value } : row,
+      ),
+    }));
+  };
+
+  // ── Submit ─────────────────────────────────────────────────────────────────
   const submit = (event: FormEvent) => {
     event.preventDefault();
     const next: FormErrors = {};
@@ -139,49 +234,130 @@ export function DeptEntryPage({ stationId }: { stationId: StationId }) {
     }
 
     if (!targetJoId && !joNumber) next.jobOrder = "Enter a job order number.";
-    if (!date)         next.date     = "Select a date.";
-    if (!timeSlot)     next.timeSlot = "Select a time slot.";
+    if (!date) next.date = "Select a date.";
+    if (!timeSlot) next.timeSlot = "Select a time slot.";
 
-    // At least one row must have output
-    const filledRows = rows.filter(isRowFilled);
-    if (filledRows.length === 0) {
-      next.rows = "Enter at least one output count.";
+    // Gather filled rows across ALL departments
+    let totalFilled = 0;
+    const filledByDept: Record<StationId, ProcessRow[]> = {} as Record<StationId, ProcessRow[]>;
+
+    for (const station of STATIONS) {
+      const deptRows = allDeptRows[station.id] || [];
+      const filled = deptRows.filter(isRowFilled);
+      filledByDept[station.id] = filled;
+      totalFilled += filled.length;
+    }
+
+    if (totalFilled === 0) {
+      next.rows = "Enter at least one output count in any department.";
     }
 
     setErrors(next);
     if (Object.keys(next).length > 0 || !targetJoId) return;
 
-    // Save all filled rows
-    for (const row of filledRows) {
-      const parsedOut = Math.max(0, Math.round(Number(row.output) || 0));
+    // Save filled entries from all departments
+    for (const station of STATIONS) {
+      const filled = filledByDept[station.id] || [];
+      for (const row of filled) {
+        const parsedOut = Math.max(0, Math.round(Number(row.output) || 0));
 
-      addEntry({
-        jobOrderId:    targetJoId,
-        station:       stationId,
-        subProcess:    row.subProcess,
-        personnelName: row.personnel.trim() || "—",
-        good:          parsedOut,
-        output:        parsedOut,
-        timeSlot:      timeSlot as TimeSlot,
-        entryDate:     date,
-      });
+        addEntry({
+          jobOrderId: targetJoId,
+          station: station.id,
+          subProcess: row.subProcess,
+          personnelName: row.personnel.trim() || "—",
+          output: Math.round(Number(row.output)),
+          timeSlot: timeSlot as TimeSlot,
+          entryDate: date,
+        });
+      }
     }
 
-    // Clear counts
-    setRows((prev) => prev.map((r) => ({ ...r, output: "" })));
+    // Reset output fields for all departments
+    setAllDeptRows((prev) => {
+      const updated = { ...prev };
+      for (const station of STATIONS) {
+        if (updated[station.id]) {
+          updated[station.id] = updated[station.id].map((r) => ({ ...r, output: "" }));
+        }
+      }
+      return updated;
+    });
+
     setSaved(true);
   };
 
-  // ── Render ───────────────────────────────────────────────────────────────────
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <PageShell
-      title={station.label}
-      breadcrumb={["CCB", "Production", station.label]}
+      title="Log Entry"
+      breadcrumb={["CCB", "Production", "Log Entry"]}
     >
       <form onSubmit={submit} noValidate className="space-y-4">
 
-        {/* ── Header card ─────────────────────────────────────────────────── */}
-        <Panel title="Job details">
+        {/* ── Department selector ──────────────────────────────────────────── */}
+        <section className="rounded-[16px] border border-[#D2D2D7] bg-white shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
+          <div className="border-b border-[#D2D2D7] px-6 pt-5 pb-4">
+            <p className="mb-1 text-[12px] font-semibold uppercase tracking-[0.08em] text-[#6E6E73]">
+              Step 1 — Select Department
+            </p>
+            <p className="text-[13px] text-[#6E6E73]">
+              Choose the department you are logging entries for.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-3 p-5">
+            {DEPT_TABS.map((dept) => {
+              const isActive = activeDeptId === dept.id;
+              const Icon = dept.icon;
+
+              return (
+                <button
+                  key={dept.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveDeptId(dept.id);
+                    setSaved(false);
+                    setErrors({});
+                  }}
+                  style={
+                    isActive
+                      ? {
+                          backgroundColor: dept.activeBg,
+                          color: dept.activeText,
+                          borderColor: dept.activeBorder,
+                        }
+                      : {}
+                  }
+                  className={cn(
+                    "relative flex items-center gap-2.5 rounded-[12px] border px-4 py-3 text-[13px] font-medium transition-all duration-200",
+                    isActive
+                      ? "shadow-[0_2px_12px_rgba(0,0,0,0.10)]"
+                      : "border-[#D2D2D7] bg-[#F5F5F7] text-[#1D1D1F]/60 hover:border-[#C7C7CC] hover:bg-white hover:text-[#1D1D1F]",
+                  )}
+                >
+                  <Icon
+                    className="h-[17px] w-[17px] shrink-0"
+                    strokeWidth={isActive ? 2 : 1.5}
+                    style={isActive ? { color: dept.activeText } : {}}
+                  />
+                  <span>{dept.label}</span>
+
+                  {/* Active indicator dot */}
+                  {isActive && (
+                    <span
+                      className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full border-2 border-white"
+                      style={{ backgroundColor: dept.color }}
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* ── Job details ──────────────────────────────────────────────────── */}
+        <Panel title="Step 2 — Job Details">
           <div className="grid gap-5 lg:grid-cols-3">
 
             {/* Sub-card 1: Job Identification */}
@@ -354,19 +530,35 @@ export function DeptEntryPage({ stationId }: { stationId: StationId }) {
           </div>
         </Panel>
 
-        {/* ── Process rows card ──────────────────────────────────────────── */}
-        <Panel title="Processes">
+        {/* ── Process rows ─────────────────────────────────────────────────── */}
+        <section className="rounded-[16px] border border-[#D2D2D7] bg-white shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
+          <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[#D2D2D7] px-6 py-5">
+            <div className="flex items-center gap-2">
+              <activeDept.icon
+                className="h-5 w-5"
+                strokeWidth={2}
+                style={{ color: activeDept.activeText }}
+              />
+              <h2 className="text-[17px] font-semibold tracking-[-0.01em] text-[#1D1D1F]">
+                Step 3 — Log Output
+              </h2>
+              <span
+                className="rounded-[8px] px-2.5 py-0.5 text-[11px] font-semibold"
+                style={{
+                  backgroundColor: activeDept.activeBg,
+                  color: activeDept.activeText,
+                }}
+              >
+                {activeDept.label}
+              </span>
+            </div>
+          </header>
+          <div className="p-6">
           {/* Column headers */}
           <div className="mb-2 hidden grid-cols-[1fr_160px_220px] gap-4 border-b border-[#D2D2D7] pb-2 sm:grid">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#6E6E73]">
-              Process
-            </p>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#6E6E73]">
-              Output count
-            </p>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#6E6E73]">
-              Personnel
-            </p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#6E6E73]">Process</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#6E6E73]">Output count</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#6E6E73]">Personnel</p>
           </div>
 
           {/* Rows */}
@@ -379,13 +571,19 @@ export function DeptEntryPage({ stationId }: { stationId: StationId }) {
                   className={cn(
                     "grid items-center gap-3 rounded-[12px] p-3 transition-colors duration-150",
                     "sm:grid-cols-[1fr_160px_220px] sm:rounded-none sm:p-0",
-                    hasValue
-                      ? "bg-[rgba(0,113,227,0.05)] sm:bg-transparent"
-                      : "bg-[#FAFAFA] sm:bg-transparent",
+                    hasValue ? "sm:bg-transparent" : "bg-[#FAFAFA] sm:bg-transparent",
                   )}
+                  style={
+                    hasValue
+                      ? { backgroundColor: activeDept.activeBg }
+                      : {}
+                  }
                 >
                   {/* Process name */}
-                  <p className="text-[14px] font-medium text-[#1D1D1F]">
+                  <p
+                    className="text-[14px] font-medium"
+                    style={hasValue ? { color: activeDept.activeText } : { color: "#1D1D1F" }}
+                  >
                     {row.subProcess}
                   </p>
 
@@ -429,21 +627,29 @@ export function DeptEntryPage({ stationId }: { stationId: StationId }) {
           )}
 
           {/* Submit row */}
-          <div className="mt-6 flex items-center gap-4 border-t border-[#D2D2D7] pt-5">
-            <button type="submit" className="btn-primary">
-              <Plus className="h-4 w-4" strokeWidth={1.5} />
-              Log all entries
+          <div className="mt-6 flex flex-wrap items-center gap-4 border-t border-[#D2D2D7] pt-5">
+            <button
+              type="submit"
+              className="btn-primary flex items-center gap-2 bg-[#0071E3] hover:bg-[#0071E3]/90 text-white font-semibold shadow-sm transition-all"
+            >
+              <CheckCircle2 className="h-4.5 w-4.5" strokeWidth={2} />
+              <span>Save All Log Entries</span>
+              {totalFilledCount > 0 && (
+                <span className="ml-1 rounded-full bg-white/25 px-2 py-0.5 text-[11px] font-bold text-white">
+                  {totalFilledCount} {totalFilledCount === 1 ? "process" : "processes"}
+                </span>
+              )}
             </button>
 
             {saved && (
               <div className="flex items-center gap-1.5 text-[13px] font-medium text-[#34c759]">
                 <CheckCircle2 className="h-4 w-4" strokeWidth={1.5} />
-                Entries saved — ready for next batch.
+                All entries across all departments saved successfully!
               </div>
             )}
           </div>
-        </Panel>
-
+          </div>
+        </section>
       </form>
     </PageShell>
   );

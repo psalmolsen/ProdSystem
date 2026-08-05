@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { AppSidebar } from "@/components/app/app-sidebar";
 import { Dashboard } from "@/pages/Dashboard";
 import { DeptEntryPage } from "@/pages/DeptEntryPage";
-import { ProductionEntryPage } from "@/pages/ProductionEntryPage";
+import { LogEntryPage } from "@/pages/LogEntryPage";
 import type { StationId } from "@/types/tracker";
 
 // ── Simple hash router ────────────────────────────────────────────────────────
@@ -36,7 +36,7 @@ export default function App() {
   if (hash === "#/" || hash === "#") {
     page = <Dashboard />;
   } else if (hash === "#/entry") {
-    page = <ProductionEntryPage />;
+    page = <LogEntryPage />;
   } else if (DEPT_ROUTES[hash]) {
     page = <DeptEntryPage stationId={DEPT_ROUTES[hash]} />;
   } else {

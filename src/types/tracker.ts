@@ -22,7 +22,8 @@ export interface Entry {
   station: StationId;
   subProcess: string;
   personnelName: string;
-  output: number;
+  good: number;
+  output: number;         // Total processed
   timeSlot: TimeSlot;     // Which 2-hour shift window this was logged in
   entryDate: string;      // ISO date string (YYYY-MM-DD)
   loggedAt: string;       // Full ISO timestamp
@@ -33,7 +34,8 @@ export interface CreateEntryInput {
   station: StationId;
   subProcess: string;
   personnelName: string;
-  output: number;
+  good: number;
+  output: number;         // Total processed
   timeSlot: TimeSlot;
   entryDate: string;      // YYYY-MM-DD
 }

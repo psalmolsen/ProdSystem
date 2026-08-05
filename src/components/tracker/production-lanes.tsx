@@ -29,6 +29,7 @@ function FlowNode({
   intensity,
   selected,
   bottleneck,
+  isFinalStep,
   onClick,
 }: {
   label: string;
@@ -36,6 +37,7 @@ function FlowNode({
   intensity: number;
   selected: boolean;
   bottleneck: boolean;
+  isFinalStep?: boolean;
   onClick: () => void;
 }) {
   const empty = total <= 0;
@@ -47,8 +49,7 @@ function FlowNode({
       title={`${label} \u00b7 ${total} units`}
       className={cn(
         "relative flex min-h-[76px] min-w-0 flex-1 flex-col justify-between gap-2 overflow-hidden rounded-[12px] border px-3 py-3 text-left shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_4px_24px_rgba(0,0,0,0.08)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0071E3] focus-visible:ring-offset-1",
-        "bg-[rgba(0,113,227,0.06)]",
-        "border-[rgba(0,113,227,0.16)]",
+        isFinalStep ? "bg-[rgba(52,199,89,0.08)] border-[rgba(52,199,89,0.30)]" : "bg-[rgba(0,113,227,0.06)] border-[rgba(0,113,227,0.16)]",
         selected && "border-[#0071E3] ring-2 ring-[rgba(0,113,227,0.25)]",
         bottleneck && !selected && "trace-overload",
       )}
@@ -63,8 +64,18 @@ function FlowNode({
             strokeWidth={1.5}
           />
         )}
+        {isFinalStep && (
+          <span className="rounded-full bg-[#34C759] px-1.5 py-0.5 text-[9px] font-bold text-white uppercase tracking-wider">
+            GOOD
+          </span>
+        )}
       </span>
-      <span className="text-[22px] font-semibold tabular leading-none tracking-[-0.02em] text-[#1D1D1F] xl:text-[24px]">
+      <span
+        className={cn(
+          "text-[22px] font-semibold tabular leading-none tracking-[-0.02em] xl:text-[24px]",
+          isFinalStep ? "text-[#28CD41]" : "text-[#1D1D1F]",
+        )}
+      >
         {empty ? "\u2014" : total}
       </span>
     </button>
@@ -164,8 +175,10 @@ function StationRow({
   selected: StepSelection | null;
   onSelectStep: (selection: StepSelection) => void;
 }) {
+  // Exclude "Good" from the Cosmetics line so it can be rendered on its own independent line
+  const subProcesses = station.subProcesses.filter((sp) => sp !== "Good");
   const display =
-    station.direction === "rtl" ? [...station.subProcesses].reverse() : station.subProcesses;
+    station.direction === "rtl" ? [...subProcesses].reverse() : subProcesses;
   const nodeTotals = display.map((sp) => totals[stepKey(station.id, sp)] ?? 0);
 
   const exitIndex = station.direction === "ltr" ? display.length - 1 : 0;
@@ -216,13 +229,12 @@ function StationRow({
         })}
       </div>
 
-      {!isLast && (
-        <VerticalConnector
-          intensity={exitIntensity}
-          active={exitTotal > 0}
-          side={exitSide}
-        />
-      )}
+      {/* Render vertical connector to the next station or to the independent GOOD line */}
+      <VerticalConnector
+        intensity={exitIntensity}
+        active={exitTotal > 0}
+        side={exitSide}
+      />
     </div>
   );
 }
@@ -234,11 +246,15 @@ export function ProductionLanes({
   onSelectStep,
 }: {
   totals: Record<string, number>;
+  goodTotals?: Record<string, number>;
   overload: Bottleneck | null;
   selected: StepSelection | null;
   onSelectStep: (selection: StepSelection) => void;
 }) {
   const maxTotal = Math.max(0, ...Object.values(totals));
+  const goodTotal = totals["Cosmetics::Good"] ?? 0;
+  const goodKey = stepKey("Cosmetics", "Good");
+  const goodSelected = selected?.key === goodKey;
 
   return (
     <div className="-mx-1 overflow-x-auto px-1 pb-1">
@@ -257,6 +273,48 @@ export function ProductionLanes({
               onSelectStep={onSelectStep}
             />
           ))}
+
+          {/* ── Independent 6th Line: GOOD ──────────────────────────────────── */}
+          <div className="mt-1">
+            <div className="mb-2 flex items-center justify-center gap-2">
+              <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[rgba(52,199,89,0.15)] px-1 text-[10px] font-bold tabular text-[#34C759]">
+                06
+              </span>
+              <h3 className="eyebrow text-[#34C759]">GOOD</h3>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() =>
+                  onSelectStep({
+                    station: "Cosmetics",
+                    subProcess: "Good",
+                    key: goodKey,
+                  })
+                }
+                aria-pressed={goodSelected}
+                className={cn(
+                  "relative flex w-[240px] min-h-[80px] flex-col justify-between rounded-[14px] border border-[rgba(52,199,89,0.35)] bg-[rgba(52,199,89,0.08)] p-3.5 text-left shadow-[0_4px_16px_rgba(52,199,89,0.10)] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_6px_24px_rgba(52,199,89,0.18)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#34C759]",
+                  goodSelected && "border-[#34C759] ring-2 ring-[rgba(52,199,89,0.30)]",
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[13px] font-bold text-[#1D1D1F]">Good Products</span>
+                  <span className="rounded-full bg-[#34C759] px-2 py-0.5 text-[9px] font-extrabold text-white uppercase tracking-wider">
+                    COMPLETED
+                  </span>
+                </div>
+                <div className="mt-2 flex items-baseline justify-between">
+                  <span className="text-[11px] font-medium text-[#6E6E73]">Total Passed</span>
+                  <span className="text-[26px] font-bold tabular leading-none text-[#34C759]">
+                    {goodTotal <= 0 ? "\u2014" : goodTotal}
+                  </span>
+                </div>
+              </button>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>

@@ -33,6 +33,7 @@ export function Dashboard() {
     selectedJobOrderId,
     setSelectedJobOrderId,
     totals,
+    goodTotals,
     overload,
     addEntry,
     addJobOrder,
@@ -73,6 +74,7 @@ export function Dashboard() {
 
   const todayTotal  = selectedJobOrderId ? getTodayTotal(selectedJobOrderId)     : 0;
   const orderTotal  = selectedJobOrderId ? getJobOrderTotal(selectedJobOrderId)  : 0;
+  const goodTotal   = selectedJobOrderId ? (totals["Cosmetics::Good"] ?? 0) : 0;
 
   const toggleStep = (selection: StepSelection) => {
     if (selectedStep?.key === selection.key) {
@@ -149,24 +151,26 @@ export function Dashboard() {
             New order
           </button>
 
-          {/* Standalone "Log Entry" button — opens free-select panel */}
+          {/* Standalone "Log Entry" button — navigates to the LogEntryPage */}
           {selectedJobOrder && (
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedStep(null);
-                setPanelMode("free");
-              }}
+            <a
+              href="#/entry"
               className="btn-primary"
             >
               <Plus className="h-4 w-4" strokeWidth={1.5} />
               Log entry
-            </button>
+            </a>
           )}
 
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-6 border-l border-[#D2D2D7] pl-6">
             <Stat label="Logged today" value={todayTotal} />
             <Stat label="Order total"  value={orderTotal} />
+            <div>
+              <p className="eyebrow text-[#34C759]">Finished Good</p>
+              <p className="mt-1 text-[22px] font-bold tabular tracking-[-0.02em] text-[#34C759]">
+                {goodTotal}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -217,6 +221,7 @@ export function Dashboard() {
           {selectedJobOrder ? (
             <ProductionLanes
               totals={totals}
+              goodTotals={goodTotals}
               overload={overload}
               selected={selectedStep}
               onSelectStep={toggleStep}
