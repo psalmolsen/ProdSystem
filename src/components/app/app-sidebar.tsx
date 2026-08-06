@@ -16,6 +16,7 @@ import {
   Users,
   Settings,
   ChevronRight,
+  LogOut,
 } from "lucide-react";
 import logo from "@/assets/ccb-logo.png.asset.json";
 import { cn } from "@/lib/utils";
@@ -49,53 +50,43 @@ const groups: { label: string; items: { to: string; label: string; icon: typeof 
     ],
   },
   {
-    label: "Outbound",
+    label: "System",
     items: [
-      { to: "/dispatch", label: "Dispatch", icon: PackageCheck },
-      { to: "/reports",  label: "Reports",  icon: FileBarChart },
-    ],
-  },
-  {
-    label: "Administration",
-    items: [
-      { to: "/users",    label: "Users",    icon: Users },
-      { to: "/settings", label: "Settings", icon: Settings },
+      { to: "/auth", label: "Station Login UI", icon: LogOut },
     ],
   },
 ];
 
-export function AppSidebar({ activePath = "/" }: { activePath?: string }) {
+export function AppSidebar({ activePath }: { activePath: string }) {
   return (
-    <aside className="hidden w-[240px] shrink-0 flex-col border-r border-[#D2D2D7] bg-[#FFFFFF] lg:flex">
-      {/* Logo lockup */}
-      <div className="flex h-[64px] items-center gap-3 border-b border-[#D2D2D7] px-5">
-        <img
-          src={logo.url}
-          alt="CCB"
-          className="h-8 w-8 rounded-[10px] bg-[#F5F5F7] p-0.5 shadow-[0_2px_8px_rgba(0,0,0,0.06)]"
-        />
-        <div className="min-w-0">
-          <p className="truncate text-[13px] font-semibold text-[#1D1D1F] tracking-[-0.01em]">
-            CCB Cylinder
+    <aside className="flex h-full w-[240px] flex-col shrink-0 border-r border-[#D2D2D7] bg-white text-[#1D1D1F]">
+      {/* Brand header */}
+      <div className="flex h-[72px] items-center gap-3 border-b border-[#D2D2D7] px-6">
+        <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[10px] bg-[#0071E3]/10">
+          <img src={logo.src} alt="CCB Logo" className="h-[22px] w-[22px] object-contain" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[14px] font-semibold tracking-[-0.01em] text-[#1D1D1F]">
+            CCB Production
           </p>
-          <p className="truncate text-[11px] text-[#6E6E73]">Tracking System</p>
+          <p className="truncate text-[11px] text-[#6E6E73]">Manufacturing System</p>
         </div>
       </div>
 
-      {/* Nav groups */}
-      <nav className="flex-1 overflow-y-auto px-3 py-5">
+      {/* Navigation list */}
+      <nav className="flex-1 overflow-y-auto p-3 space-y-6">
         {groups.map((group) => (
-          <div key={group.label} className="mb-6">
-            <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6E6E73]">
+          <div key={group.label}>
+            <p className="px-3 mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6E6E73]">
               {group.label}
             </p>
-            <ul className="space-y-0.5">
+            <ul className="space-y-1">
               {group.items.map((item) => {
-                const active = activePath === item.to;
+                const active = activePath === item.to || (item.to === "/" && activePath === "");
                 return (
                   <li key={item.to}>
                     <a
-                      href={item.to === "/" ? "#/" : `#${item.to}`}
+                      href={`#${item.to}`}
                       className={cn(
                         "flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-[13px] font-medium transition-colors duration-200",
                         active
@@ -131,7 +122,10 @@ export function AppSidebar({ activePath = "/" }: { activePath?: string }) {
 
       {/* User footer */}
       <div className="border-t border-[#D2D2D7] p-3">
-        <button className="flex w-full items-center gap-3 rounded-[10px] px-2.5 py-2.5 text-left transition-colors duration-200 hover:bg-[#F5F5F7]">
+        <a
+          href="#/auth"
+          className="flex w-full items-center gap-3 rounded-[10px] px-2.5 py-2.5 text-left transition-colors duration-200 hover:bg-[#F5F5F7]"
+        >
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#0071E3] text-[11px] font-semibold text-white">
             RV
           </span>
@@ -142,7 +136,7 @@ export function AppSidebar({ activePath = "/" }: { activePath?: string }) {
             <span className="block truncate text-[11px] text-[#6E6E73]">Plant Supervisor</span>
           </span>
           <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[#6E6E73]" strokeWidth={1.75} />
-        </button>
+        </a>
       </div>
     </aside>
   );

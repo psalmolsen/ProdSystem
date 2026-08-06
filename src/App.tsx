@@ -4,6 +4,7 @@ import { Dashboard } from "@/pages/Dashboard";
 import { DeptEntryPage } from "@/pages/DeptEntryPage";
 import { LogEntryPage } from "@/pages/LogEntryPage";
 import { JobOrdersPage } from "@/pages/JobOrdersPage";
+import { AuthPage } from "@/pages/AuthPage";
 import type { StationId } from "@/types/tracker";
 
 // ── Simple hash router ────────────────────────────────────────────────────────
@@ -28,6 +29,11 @@ function useHashRoute() {
 // ── App ───────────────────────────────────────────────────────────────────────
 export default function App() {
   const hash = useHashRoute();
+
+  // If visiting #/auth, render full-screen Auth Page
+  if (hash === "#/auth") {
+    return <AuthPage />;
+  }
 
   // Derive activePath for the sidebar highlight
   const activePath = hash.replace(/^#/, "") || "/";
