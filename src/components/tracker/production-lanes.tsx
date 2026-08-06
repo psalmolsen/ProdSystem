@@ -283,7 +283,7 @@ export function ProductionLanes({
               <h3 className="eyebrow text-[#34C759]">GOOD</h3>
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-center">
               <button
                 type="button"
                 onClick={() =>

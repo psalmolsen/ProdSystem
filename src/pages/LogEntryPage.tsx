@@ -8,12 +8,18 @@ import {
   Wrench,
   PaintRoller,
   Droplets,
+  RefreshCw,
+  AlertCircle,
 } from "lucide-react";
 import { PageShell, Panel } from "@/components/app/page-shell";
 import { STATIONS, TIME_SLOTS } from "@/config/stations";
-import type { TimeSlot } from "@/config/stations";
+import type { TimeSlot as LegacyTimeSlot } from "@/config/stations";
 import type { StationId } from "@/types/tracker";
-import { useTracker } from "@/hooks/useTracker";
+import type { JobOrder } from "@/types/jobOrder";
+import type { DepartmentName } from "@/constants/departments";
+import type { TimeSlot } from "@/constants/timeSlots";
+import { createJobOrder, getAllJobOrders } from "@/services/firestore/jobOrderService";
+import { updateProductionValue } from "@/services/firestore/productionService";
 import { cn } from "@/lib/utils";
 
 // ── Dept tab config ────────────────────────────────────────────────────────────
@@ -79,6 +85,31 @@ const DEPT_TABS: {
   },
 ];
 
+// ── Mapping Helpers ────────────────────────────────────────────────────────────
+function mapTimeSlotToEngine(slot: LegacyTimeSlot): TimeSlot {
+  switch (slot) {
+    case "6am–8am":
+      return "6-8";
+    case "8am–10am":
+      return "8-10";
+    case "11am–1pm":
+      return "11-1";
+    case "1pm–3pm":
+      return "1-3";
+    case "3pm–5pm":
+      return "3-5";
+    default:
+      return "6-8";
+  }
+}
+
+function mapSubProcessToEngine(dept: StationId, subProc: string): string {
+  if (dept === "CTC1" && subProc === "Sorting/Cleaning Valve") return "Sorting";
+  if (dept === "Cosmetics" && subProc === "Tacking/Weighing") return "Tacking / Weighing";
+  if (dept === "Cosmetics" && subProc === "TW/Warning/RQ") return "TW / Warning / RQ";
+  return subProc;
+}
+
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface ProcessRow {
   subProcess: string;
@@ -99,17 +130,20 @@ function todayValue(): string {
 
 // ── LogEntryPage ───────────────────────────────────────────────────────────────
 export function LogEntryPage() {
-  const { jobOrders, addEntry, addJobOrder } = useTracker();
   const uid = useId();
 
-  // ── Dept selection ─────────────────────────────────────────────────────────
+  // Firestore Job Orders state
+  const [jobOrders, setJobOrders] = useState<JobOrder[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+
+  // Dept selection
   const [activeDeptId, setActiveDeptId] = useState<StationId>("CTC1");
   const activeDept = useMemo(
     () => DEPT_TABS.find((d) => d.id === activeDeptId) || DEPT_TABS[0],
     [activeDeptId],
   );
 
-  // ── Header state ───────────────────────────────────────────────────────────
+  // Header state
   const [selectedJoId, setSelectedJoId] = useState<string>("");
   const [joNumber, setJoNumber] = useState<string>("");
   const [workOrderCnf, setWorkOrderCnf] = useState<string>("");
@@ -117,31 +151,40 @@ export function LogEntryPage() {
   const [workOrderC, setWorkOrderC] = useState<string>("");
   const [brandName, setBrandName] = useState<string>("");
   const [date, setDate] = useState(todayValue());
-  const [timeSlot, setTimeSlot] = useState<TimeSlot | "">("");
+  const [timeSlot, setTimeSlot] = useState<LegacyTimeSlot | "">("6am–8am");
   const [errors, setErrors] = useState<FormErrors>({});
-  const [saved, setSaved] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [savedMessage, setSavedMessage] = useState<string | null>(null);
 
-  // Auto-select first JO on load
-  useEffect(() => {
-    if (jobOrders.length > 0 && !selectedJoId && !joNumber) {
-      setSelectedJoId(jobOrders[0].id);
-      const match = jobOrders[0].workOrderNumber.match(/\d+/);
-      setJoNumber(match ? match[0] : "");
-      setBrandName(jobOrders[0].brandName || "");
+  // Load Job Orders directly from Firestore
+  const loadJobOrders = async () => {
+    setLoadingOrders(true);
+    try {
+      const orders = await getAllJobOrders();
+      setJobOrders(orders);
+      if (orders.length > 0 && !selectedJoId && !joNumber) {
+        setSelectedJoId(orders[0].id);
+        const match = orders[0].workOrder.match(/\d+/);
+        setJoNumber(match ? match[0] : orders[0].workOrder);
+        setBrandName(orders[0].brand || "");
+      }
+    } catch (err) {
+      console.error("Failed to load Job Orders from Firestore:", err);
+    } finally {
+      setLoadingOrders(false);
     }
-  }, [jobOrders, selectedJoId, joNumber]);
+  };
+
+  useEffect(() => {
+    loadJobOrders();
+  }, []);
 
   // Auto-clear saved banner
   useEffect(() => {
-    if (!saved) return;
-    const t = window.setTimeout(() => setSaved(false), 3000);
+    if (!savedMessage) return;
+    const t = window.setTimeout(() => setSavedMessage(null), 4000);
     return () => window.clearTimeout(t);
-  }, [saved]);
-
-  const selectedJo = useMemo(
-    () => jobOrders.find((o) => o.id === selectedJoId) ?? null,
-    [jobOrders, selectedJoId],
-  );
+  }, [savedMessage]);
 
   const handleJoNumberChange = (numStr: string) => {
     const cleanNum = numStr.replace(/\D/g, "");
@@ -151,28 +194,18 @@ export function LogEntryPage() {
       return;
     }
     const matched = jobOrders.find((o) => {
-      const digits = o.workOrderNumber.replace(/\D/g, "");
+      const digits = o.workOrder.replace(/\D/g, "");
       return digits === cleanNum;
     });
     if (matched) {
       setSelectedJoId(matched.id);
-      setBrandName(matched.brandName);
+      setBrandName(matched.brand);
     } else {
       setSelectedJoId("");
     }
   };
 
-  const handleJoSelect = (id: string) => {
-    setSelectedJoId(id);
-    const matched = jobOrders.find((o) => o.id === id);
-    if (matched) {
-      const match = matched.workOrderNumber.match(/\d+/);
-      setJoNumber(match ? match[0] : "");
-      setBrandName(matched.brandName);
-    }
-  };
-
-  // ── Process rows per department ────────────────────────────────────────────
+  // Process rows per department
   const [allDeptRows, setAllDeptRows] = useState<Record<StationId, ProcessRow[]>>(() => {
     const initial: Partial<Record<StationId, ProcessRow[]>> = {};
     for (const station of STATIONS) {
@@ -214,22 +247,18 @@ export function LogEntryPage() {
     }));
   };
 
-  // ── Submit ─────────────────────────────────────────────────────────────────
-  const submit = (event: FormEvent) => {
+  // ── Submit to Firestore ────────────────────────────────────────────────────
+  const submit = async (event: FormEvent) => {
     event.preventDefault();
     const next: FormErrors = {};
 
     let targetJoId = selectedJoId;
     if (!targetJoId && joNumber) {
       const existing = jobOrders.find(
-        (o) => o.workOrderNumber.replace(/\D/g, "") === joNumber,
+        (o) => o.workOrder.replace(/\D/g, "") === joNumber,
       );
       if (existing) {
         targetJoId = existing.id;
-      } else {
-        const created = addJobOrder(`JO# ${joNumber}`, "Standard");
-        targetJoId = created.id;
-        setSelectedJoId(created.id);
       }
     }
 
@@ -253,47 +282,83 @@ export function LogEntryPage() {
     }
 
     setErrors(next);
-    if (Object.keys(next).length > 0 || !targetJoId) return;
+    if (Object.keys(next).length > 0) return;
 
-    // Save filled entries from all departments
-    for (const station of STATIONS) {
-      const filled = filledByDept[station.id] || [];
-      for (const row of filled) {
-        const parsedOut = Math.max(0, Math.round(Number(row.output) || 0));
-
-        addEntry({
-          jobOrderId: targetJoId,
-          station: station.id,
-          subProcess: row.subProcess,
-          personnelName: row.personnel.trim() || "—",
-          output: Math.round(Number(row.output)),
-          timeSlot: timeSlot as TimeSlot,
-          entryDate: date,
+    setSubmitting(true);
+    try {
+      // 1. If Job Order does not exist in Firestore yet, create it!
+      if (!targetJoId && joNumber) {
+        const createdJo = await createJobOrder({
+          workOrder: `WO-${joNumber}`,
+          brand: brandName.trim() || "Standard",
+          status: "Active",
         });
+        targetJoId = createdJo.id;
+        setSelectedJoId(createdJo.id);
+        await loadJobOrders();
       }
-    }
 
-    // Reset output fields for all departments
-    setAllDeptRows((prev) => {
-      const updated = { ...prev };
+      // 2. Save filled entries to Firestore under jobOrders/{joId}/production/{date}
+      const engineTimeSlot = mapTimeSlotToEngine(timeSlot as LegacyTimeSlot);
+
       for (const station of STATIONS) {
-        if (updated[station.id]) {
-          updated[station.id] = updated[station.id].map((r) => ({ ...r, output: "" }));
+        const filled = filledByDept[station.id] || [];
+        for (const row of filled) {
+          const parsedOut = Math.max(0, Math.round(Number(row.output) || 0));
+          const mappedProcess = mapSubProcessToEngine(station.id, row.subProcess);
+
+          await updateProductionValue({
+            jobOrderId: targetJoId,
+            dateStr: date,
+            department: station.id as DepartmentName,
+            processName: mappedProcess,
+            timeSlot: engineTimeSlot,
+            value: parsedOut,
+            operatorName: row.personnel.trim() || "Operator",
+          });
         }
       }
-      return updated;
-    });
 
-    setSaved(true);
+      // 3. Reset output fields for all departments
+      setAllDeptRows((prev) => {
+        const updated = { ...prev };
+        for (const station of STATIONS) {
+          if (updated[station.id]) {
+            updated[station.id] = updated[station.id].map((r) => ({ ...r, output: "" }));
+          }
+        }
+        return updated;
+      });
+
+      setSavedMessage(`Saved ${totalFilled} process entries to Cloud Firestore successfully!`);
+    } catch (err) {
+      console.error("Failed to save entries to Firestore:", err);
+      const msg = (err as Error).message;
+      if (msg.includes("permission") || msg.includes("permissions")) {
+        setErrors({
+          rows: "Firestore Security Rules Error: Permission Denied. Please set 'allow read, write: if true;' in your Firebase Console → Firestore Database → Rules tab.",
+        });
+      } else {
+        setErrors({ rows: `Firestore Save Error: ${msg}` });
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <PageShell
       title="Log Entry"
       breadcrumb={["CCB", "Production", "Log Entry"]}
     >
       <form onSubmit={submit} noValidate className="space-y-4">
+        {/* Saved Success Banner */}
+        {savedMessage && (
+          <div className="flex items-center gap-3 rounded-[12px] bg-[#DCFCE7] p-4 text-[14px] font-semibold text-[#16A34A] border border-[#BBF7D0]">
+            <CheckCircle2 className="h-5 w-5 shrink-0" />
+            <span>{savedMessage}</span>
+          </div>
+        )}
 
         {/* ── Department selector ──────────────────────────────────────────── */}
         <section className="rounded-[16px] border border-[#D2D2D7] bg-white shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
@@ -317,7 +382,7 @@ export function LogEntryPage() {
                   type="button"
                   onClick={() => {
                     setActiveDeptId(dept.id);
-                    setSaved(false);
+                    setSavedMessage(null);
                     setErrors({});
                   }}
                   style={
@@ -343,7 +408,6 @@ export function LogEntryPage() {
                   />
                   <span>{dept.label}</span>
 
-                  {/* Active indicator dot */}
                   {isActive && (
                     <span
                       className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full border-2 border-white"
@@ -359,7 +423,6 @@ export function LogEntryPage() {
         {/* ── Job details ──────────────────────────────────────────────────── */}
         <Panel title="Step 2 — Job Details">
           <div className="grid gap-5 lg:grid-cols-3">
-
             {/* Sub-card 1: Job Identification */}
             <div className="flex flex-col justify-between rounded-[14px] border border-[#E5E5EA] bg-[#FBFBFC] p-4.5">
               <div>
@@ -390,7 +453,7 @@ export function LogEntryPage() {
                         pattern="[0-9]*"
                         value={joNumber}
                         onChange={(e) => handleJoNumberChange(e.target.value)}
-                        placeholder="e.g. 2408"
+                        placeholder="e.g. 101 or 2408"
                         className="h-[42px] w-full bg-transparent px-3 text-[14px] font-medium text-[#1D1D1F] outline-none placeholder:text-[#A1A1A6]"
                       />
                     </div>
@@ -411,7 +474,7 @@ export function LogEntryPage() {
                       type="text"
                       value={brandName}
                       onChange={(e) => setBrandName(e.target.value)}
-                      placeholder="e.g. FireMaster"
+                      placeholder="e.g. FireMaster / Akxel"
                       className="h-[42px] w-full rounded-[12px] border border-[#D2D2D7] bg-white px-3 text-[14px] font-medium text-[#1D1D1F] outline-none transition-all focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20"
                     />
                   </div>
@@ -494,7 +557,10 @@ export function LogEntryPage() {
                       type="date"
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
-                      className={cn("h-[42px] w-full rounded-[12px] border border-[#D2D2D7] bg-white px-3 text-[14px] font-medium text-[#1D1D1F] outline-none transition-all focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20", errors.date && "border-[#ff3b30]")}
+                      className={cn(
+                        "h-[42px] w-full rounded-[12px] border border-[#D2D2D7] bg-white px-3 text-[14px] font-medium text-[#1D1D1F] outline-none transition-all focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20",
+                        errors.date && "border-[#ff3b30]",
+                      )}
                     />
                     {errors.date && (
                       <p className="mt-1 text-[12px] text-[#ff3b30]">{errors.date}</p>
@@ -511,12 +577,19 @@ export function LogEntryPage() {
                     <select
                       id={`${uid}-slot`}
                       value={timeSlot}
-                      onChange={(e) => setTimeSlot(e.target.value as TimeSlot)}
-                      className={cn("h-[42px] w-full rounded-[12px] border border-[#D2D2D7] bg-white px-3 text-[14px] font-medium text-[#1D1D1F] outline-none transition-all focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 cursor-pointer", errors.timeSlot && "border-[#ff3b30]")}
+                      onChange={(e) => setTimeSlot(e.target.value as LegacyTimeSlot)}
+                      className={cn(
+                        "h-[42px] w-full rounded-[12px] border border-[#D2D2D7] bg-white px-3 text-[14px] font-medium text-[#1D1D1F] outline-none transition-all focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20",
+                        errors.timeSlot && "border-[#ff3b30]",
+                      )}
                     >
-                      <option value="">Select slot…</option>
+                      <option value="" disabled>
+                        Select a 2-hour shift slot...
+                      </option>
                       {TIME_SLOTS.map((s) => (
-                        <option key={s} value={s}>{s}</option>
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
                       ))}
                     </select>
                     {errors.timeSlot && (
@@ -526,130 +599,103 @@ export function LogEntryPage() {
                 </div>
               </div>
             </div>
-
           </div>
         </Panel>
 
-        {/* ── Process rows ─────────────────────────────────────────────────── */}
-        <section className="rounded-[16px] border border-[#D2D2D7] bg-white shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
-          <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[#D2D2D7] px-6 py-5">
-            <div className="flex items-center gap-2">
-              <activeDept.icon
-                className="h-5 w-5"
-                strokeWidth={2}
-                style={{ color: activeDept.activeText }}
-              />
-              <h2 className="text-[17px] font-semibold tracking-[-0.01em] text-[#1D1D1F]">
-                Step 3 — Log Output
-              </h2>
-              <span
-                className="rounded-[8px] px-2.5 py-0.5 text-[11px] font-semibold"
-                style={{
-                  backgroundColor: activeDept.activeBg,
-                  color: activeDept.activeText,
-                }}
-              >
-                {activeDept.label}
-              </span>
-            </div>
-          </header>
-          <div className="p-6">
-          {/* Column headers */}
-          <div className="mb-2 hidden grid-cols-[1fr_160px_220px] gap-4 border-b border-[#D2D2D7] pb-2 sm:grid">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#6E6E73]">Process</p>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#6E6E73]">Output count</p>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#6E6E73]">Personnel</p>
-          </div>
-
-          {/* Rows */}
-          <div className="space-y-3">
-            {rows.map((row, i) => {
-              const hasValue = isRowFilled(row);
-              return (
-                <div
-                  key={row.subProcess}
-                  className={cn(
-                    "grid items-center gap-3 rounded-[12px] p-3 transition-colors duration-150",
-                    "sm:grid-cols-[1fr_160px_220px] sm:rounded-none sm:p-0",
-                    hasValue ? "sm:bg-transparent" : "bg-[#FAFAFA] sm:bg-transparent",
-                  )}
-                  style={
-                    hasValue
-                      ? { backgroundColor: activeDept.activeBg }
-                      : {}
-                  }
-                >
-                  {/* Process name */}
-                  <p
-                    className="text-[14px] font-medium"
-                    style={hasValue ? { color: activeDept.activeText } : { color: "#1D1D1F" }}
-                  >
-                    {row.subProcess}
-                  </p>
-
-                  {/* Output count */}
-                  <div>
-                    <label className="mb-1 block text-[11px] text-[#6E6E73] sm:hidden">
-                      Output count
-                    </label>
-                    <input
-                      type="number"
-                      min={1}
-                      step={1}
-                      inputMode="numeric"
-                      value={row.output}
-                      onChange={(e) => updateRow(i, "output", e.target.value)}
-                      placeholder="—"
-                      className="input-field tabular text-center"
-                    />
-                  </div>
-
-                  {/* Personnel */}
-                  <div>
-                    <label className="mb-1 block text-[11px] text-[#6E6E73] sm:hidden">
-                      Personnel
-                    </label>
-                    <input
-                      type="text"
-                      value={row.personnel}
-                      onChange={(e) => updateRow(i, "personnel", e.target.value)}
-                      placeholder="Name"
-                      className="input-field"
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
+        {/* ── Process rows table ─────────────────────────────────────────────── */}
+        <Panel
+          title={`Step 3 — Process Log Entries (${activeDept.label})`}
+          description="Enter output count for each process performed during this time slot."
+        >
           {errors.rows && (
-            <p className="mt-3 text-[13px] font-medium text-[#ff3b30]">{errors.rows}</p>
+            <div className="mb-4 rounded-[12px] border border-[#FFD0D0] bg-[#FFF2F2] p-3.5 text-[13px] text-[#DC2626]">
+              {errors.rows}
+            </div>
           )}
 
-          {/* Submit row */}
-          <div className="mt-6 flex flex-wrap items-center gap-4 border-t border-[#D2D2D7] pt-5">
+          <div className="overflow-x-auto rounded-[12px] border border-[#D2D2D7]">
+            <table className="w-full text-left text-[13px]">
+              <thead>
+                <tr className="border-b border-[#D2D2D7] bg-[#F5F5F7]/80 text-[11px] font-bold uppercase tracking-[0.05em] text-[#6E6E73]">
+                  <th className="px-4 py-3 min-w-[220px]">Sub-Process</th>
+                  <th className="px-4 py-3 min-w-[120px]">Output Count</th>
+                  <th className="px-4 py-3 min-w-[180px]">Personnel Name</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#D2D2D7]">
+                {rows.map((row, index) => {
+                  const isFilled = row.output.trim() !== "" && Number(row.output) > 0;
+                  return (
+                    <tr
+                      key={row.subProcess}
+                      className={cn(
+                        "transition-colors",
+                        isFilled ? "bg-[#0071E3]/5" : "hover:bg-[#F5F5F7]/40",
+                      )}
+                    >
+                      <td className="px-4 py-3 font-semibold text-[#1D1D1F]">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="h-2 w-2 rounded-full"
+                            style={{ backgroundColor: activeDept.color }}
+                          />
+                          <span>{row.subProcess}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-2">
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={row.output}
+                          onChange={(e) =>
+                            updateRow(index, "output", e.target.value.replace(/\D/g, ""))
+                          }
+                          placeholder="0"
+                          className="h-[38px] w-24 rounded-[10px] border border-[#D2D2D7] bg-white px-3 text-center text-[14px] font-bold text-[#1D1D1F] outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20"
+                        />
+                      </td>
+                      <td className="px-4 py-2">
+                        <input
+                          type="text"
+                          value={row.personnel}
+                          onChange={(e) => updateRow(index, "personnel", e.target.value)}
+                          placeholder="e.g. J. Dela Cruz"
+                          className="h-[38px] w-full max-w-[240px] rounded-[10px] border border-[#D2D2D7] bg-white px-3 text-[13px] font-medium text-[#1D1D1F] outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20"
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-5 flex items-center justify-between pt-2 border-t border-[#D2D2D7]">
+            <p className="text-[13px] text-[#6E6E73]">
+              Filled entries to save:{" "}
+              <strong className="text-[#1D1D1F]">{totalFilledCount} process(es)</strong>
+            </p>
+
             <button
               type="submit"
-              className="btn-primary flex items-center gap-2 bg-[#0071E3] hover:bg-[#0071E3]/90 text-white font-semibold shadow-sm transition-all"
+              disabled={submitting}
+              className="inline-flex items-center gap-2 rounded-[12px] bg-[#0071E3] px-6 py-3 text-[14px] font-semibold text-white shadow-[0_4px_16px_rgba(0,113,227,0.25)] transition hover:bg-[#005bb5] disabled:opacity-50"
             >
-              <CheckCircle2 className="h-4.5 w-4.5" strokeWidth={2} />
-              <span>Save All Log Entries</span>
-              {totalFilledCount > 0 && (
-                <span className="ml-1 rounded-full bg-white/25 px-2 py-0.5 text-[11px] font-bold text-white">
-                  {totalFilledCount} {totalFilledCount === 1 ? "process" : "processes"}
-                </span>
+              {submitting ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Saving to Cloud Firestore...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-5 w-5" />
+                  Save All Log Entries
+                </>
               )}
             </button>
-
-            {saved && (
-              <div className="flex items-center gap-1.5 text-[13px] font-medium text-[#34c759]">
-                <CheckCircle2 className="h-4 w-4" strokeWidth={1.5} />
-                All entries across all departments saved successfully!
-              </div>
-            )}
           </div>
-          </div>
-        </section>
+        </Panel>
       </form>
     </PageShell>
   );

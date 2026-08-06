@@ -1,15 +1,13 @@
 import type { StationConfig, StationId } from "@/types/tracker";
 
 // ─── Station / Department configuration ──────────────────────────────────────
-// Matches the production spreadsheet exactly:
-//   Department  │  Processes (in order)
-//   ────────────┼──────────────────────────────────────────────────────────────
-//   CTC 1       │  Sorting/Cleaning Valve · Devalving · Valve Test · Shotblasting
-//   CTC 2       │  Hydro Test · Soap Suds Test · Revalve · Leak Test
-//   Hotworks    │  Plasma Cutting · Nameplate Cutting · Grinding · Cleaning
-//               │  Nameplate Welding · Tack Weld CF · Full Weld
-//   Painting    │  Primer · Putty · Sanding · Top Coat
-//   Cosmetics   │  Tacking/Weighing · Brand Label · TW/Warning/RQ
+// Layout Order:
+// 1. CTC 1       (ltr: Sorting/Cleaning Valve · Devalving · Valve Test · Shotblasting)
+// 2. Hotworks    (rtl: Plasma Cutting · Nameplate Cutting · Grinding · Cleaning · Nameplate Welding · Tack Weld CF · Full Weld)
+// 3. CTC 2       (ltr: Hydro Test · Soap Suds Test · Revalve · Leak Test)
+// 4. Painting    (rtl: Primer · Putty · Sanding · Top Coat)
+// 5. Cosmetics   (ltr: Tacking/Weighing · Brand Label · TW/Warning/RQ · Final QC)
+// 6. Good        (Independent line)
 
 export const STATIONS: StationConfig[] = [
   {
@@ -24,17 +22,6 @@ export const STATIONS: StationConfig[] = [
     ],
   },
   {
-    id: "CTC2",
-    label: "CTC 2",
-    direction: "ltr",
-    subProcesses: [
-      "Hydro Test",
-      "Soap Suds Test",
-      "Revalve",
-      "Leak Test",
-    ],
-  },
-  {
     id: "Hotworks",
     label: "Hotworks",
     direction: "rtl",
@@ -46,6 +33,17 @@ export const STATIONS: StationConfig[] = [
       "Nameplate Welding",
       "Tack Weld CF",
       "Full Weld",
+    ],
+  },
+  {
+    id: "CTC2",
+    label: "CTC 2",
+    direction: "ltr",
+    subProcesses: [
+      "Hydro Test",
+      "Soap Suds Test",
+      "Revalve",
+      "Leak Test",
     ],
   },
   {

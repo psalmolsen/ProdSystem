@@ -8,6 +8,7 @@ import {
   getGoodTotalsByStep,
   getTotalsByStep,
   listJobOrders,
+  syncFromGoogleSheets,
 } from "@/services/trackerService";
 
 export interface TrackerState {
@@ -30,6 +31,12 @@ export function useTracker(): TrackerState {
     ensureSeed();
     setJobOrders(listJobOrders());
     setRefreshKey((k) => k + 1);
+
+    // Sync from Google Sheets in background if API is configured
+    syncFromGoogleSheets().then((res) => {
+      setJobOrders(res.jobOrders);
+      setRefreshKey((k) => k + 1);
+    });
   }, []);
 
   useEffect(() => {
@@ -74,6 +81,7 @@ export function useTracker(): TrackerState {
     selectedJobOrderId,
     setSelectedJobOrderId,
     totals,
+    goodTotals,
     overload,
     addEntry,
     addJobOrder,

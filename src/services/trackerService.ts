@@ -6,6 +6,13 @@ import type {
   StationId,
 } from "@/types/tracker";
 import { FLAT_STEPS, STATIONS, stepKey } from "@/config/stations";
+import {
+  fetchEntriesFromSheet,
+  fetchJobOrdersFromSheet,
+  isApiConfigured,
+  saveEntryToSheet,
+  saveJobOrderToSheet,
+} from "./api/gsheetService";
 
 // ─── Storage keys — bump version to avoid stale-shape collisions ─────────────
 const KEY_JOB_ORDERS = "prodsystem.jobOrders.v4";
@@ -40,6 +47,38 @@ export function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+// ─── Google Sheets Synchronization ───────────────────────────────────────────
+export async function syncFromGoogleSheets(): Promise<{
+  jobOrders: JobOrder[];
+  entries: Entry[];
+}> {
+  if (!isApiConfigured()) {
+    return { jobOrders: listJobOrders(), entries: read<Entry[]>(KEY_ENTRIES, []) };
+  }
+
+  try {
+    const [remoteJobOrders, remoteEntries] = await Promise.all([
+      fetchJobOrdersFromSheet(),
+      fetchEntriesFromSheet(),
+    ]);
+
+    if (remoteJobOrders.length > 0) {
+      write(KEY_JOB_ORDERS, remoteJobOrders);
+    }
+    if (remoteEntries.length > 0) {
+      write(KEY_ENTRIES, remoteEntries);
+    }
+
+    return {
+      jobOrders: listJobOrders(),
+      entries: read<Entry[]>(KEY_ENTRIES, []),
+    };
+  } catch (err) {
+    console.warn("Failed to sync from Google Sheets, using local cache:", err);
+    return { jobOrders: listJobOrders(), entries: read<Entry[]>(KEY_ENTRIES, []) };
+  }
+}
+
 // ─── Job Orders ──────────────────────────────────────────────────────────────
 export function createJobOrder(workOrderNumber: string, brandName: string): JobOrder {
   const order: JobOrder = {
@@ -49,6 +88,14 @@ export function createJobOrder(workOrderNumber: string, brandName: string): JobO
     createdAt: new Date().toISOString(),
   };
   write(KEY_JOB_ORDERS, [order, ...listJobOrders()]);
+
+  // Async sync to Google Sheets if configured
+  if (isApiConfigured()) {
+    saveJobOrderToSheet(order).catch((err) =>
+      console.warn("Failed to post job order to Google Sheets:", err),
+    );
+  }
+
   return order;
 }
 
@@ -70,7 +117,15 @@ export function createEntry(input: CreateEntryInput): Entry {
     entryDate: input.entryDate,
     loggedAt: new Date().toISOString(),
   };
-  write(KEY_ENTRIES, [entry, ...getEntriesForJobOrder(input.jobOrderId)]);
+  write(KEY_ENTRIES, [entry, ...read<Entry[]>(KEY_ENTRIES, [])]);
+
+  // Async sync to Google Sheets if configured
+  if (isApiConfigured()) {
+    saveEntryToSheet(entry).catch((err) =>
+      console.warn("Failed to post entry to Google Sheets:", err),
+    );
+  }
+
   return entry;
 }
 

@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/app/app-sidebar";
 import { Dashboard } from "@/pages/Dashboard";
 import { DeptEntryPage } from "@/pages/DeptEntryPage";
 import { LogEntryPage } from "@/pages/LogEntryPage";
+import { JobOrdersPage } from "@/pages/JobOrdersPage";
 import type { StationId } from "@/types/tracker";
 
 // ── Simple hash router ────────────────────────────────────────────────────────
@@ -37,6 +38,8 @@ export default function App() {
     page = <Dashboard />;
   } else if (hash === "#/entry") {
     page = <LogEntryPage />;
+  } else if (hash === "#/job-orders") {
+    page = <JobOrdersPage />;
   } else if (DEPT_ROUTES[hash]) {
     page = <DeptEntryPage stationId={DEPT_ROUTES[hash]} />;
   } else {

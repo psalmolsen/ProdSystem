@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   ScanBarcode,
   ClipboardList,
+  FileText,
   Truck,
   ClipboardCheck,
   GaugeCircle,
@@ -23,9 +24,10 @@ const groups: { label: string; items: { to: string; label: string; icon: typeof 
   {
     label: "Overview",
     items: [
-      { to: "/",       label: "Dashboard",         icon: LayoutDashboard },
-      { to: "/entry",  label: "Production Entry",  icon: ClipboardList },
-      { to: "/tracking",label: "Cylinder Tracking", icon: ScanBarcode },
+      { to: "/",          label: "Dashboard",         icon: LayoutDashboard },
+      { to: "/job-orders",label: "Job Orders",        icon: FileText },
+      { to: "/entry",     label: "Production Entry",  icon: ClipboardList },
+      { to: "/tracking",  label: "Cylinder Tracking", icon: ScanBarcode },
     ],
   },
   {
