@@ -26,6 +26,23 @@ export function generateJobOrderId(): string {
 }
 
 /**
+ * Generates a unique Access Request ID string (e.g. REQ-918948).
+ */
+export function generateAccessRequestId(): string {
+  return `REQ-${Date.now().toString().slice(-6)}`;
+}
+
+/**
+ * Formats a custom document ID directly from the user's Display Name (e.g. "Psalm Olsen Naval", "Virginia").
+ */
+export function formatDocIdFromDisplayName(displayName?: string | null, fallbackUid?: string): string {
+  if (displayName && displayName.trim()) {
+    return displayName.trim().replace(/[\/\#\?\[\]]/g, "_");
+  }
+  return fallbackUid ? fallbackUid.trim() : `USER-${Date.now().toString().slice(-6)}`;
+}
+
+/**
  * Normalizes document snapshot fields with formatted timestamps.
  */
 export function parseDocSnapshot<T>(snap: DocumentSnapshot): T | null {

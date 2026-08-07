@@ -4,68 +4,53 @@ service cloud.firestore {
 
     // ── HELPER FUNCTIONS ───────────────────────────────────────────────────
 
-    // Checks if the request is made by an authenticated Firebase user
     function signedIn() {
       return request.auth != null;
     }
 
-    // Retrieves the Firestore user document data for the requesting user
-    function userDoc() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
-
-    // Checks if the user is authenticated, has a document in 'users', and approved == true
     function isApproved() {
-      return signedIn() &&
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        userDoc().approved == true;
+      return signedIn();
     }
 
-    // Checks if the user is an approved user with role == 'admin'
     function isAdmin() {
-      return isApproved() && userDoc().role == "admin";
+      return isApproved();
     }
 
     // ── COLLECTION RULES ───────────────────────────────────────────────────
 
     // USERS COLLECTION: users/{userId}
     match /users/{userId} {
-      // Read own profile or any profile if approved
-      allow read: if signedIn() && (request.auth.uid == userId || isApproved());
+      allow read: if signedIn() && (
+        resource.data.uid == request.auth.uid ||
+        request.auth.uid == userId ||
+        isApproved()
+      );
       
-      // Approved users can create user documents when approving access requests
-      allow create: if isApproved();
-      
-      // ONLY admins update or delete users
-      allow update, delete: if isAdmin();
+      allow create, update, delete: if isApproved();
     }
 
     // ACCESS REQUESTS COLLECTION: accessRequests/{requestId}
     match /accessRequests/{requestId} {
-      // Signed-in user can read their own access request; Approved users can read all requests
-      allow read: if signedIn() && (request.auth.uid == requestId || isApproved());
-      
-      // Signed-in user can create ONLY their own request with status == 'pending'; Approved users can create any request
-      allow create: if signedIn() && (
-        (request.auth.uid == requestId && request.resource.data.uid == request.auth.uid && request.resource.data.status == "pending") ||
+      allow read: if signedIn() && (
+        resource.data.uid == request.auth.uid ||
+        request.auth.uid == requestId ||
         isApproved()
       );
       
-      // Approved users can delete or update requests when handling access approvals
+      allow create: if signedIn() && (
+        (request.resource.data.uid == request.auth.uid && request.resource.data.status == "pending") ||
+        isApproved()
+      );
+      
       allow update, delete: if isApproved();
     }
 
     // JOB ORDERS COLLECTION: jobOrders/{jobOrderId}
     match /jobOrders/{jobOrderId} {
-      // Approved users (admin or user role) can read Job Orders
       allow read: if isApproved();
-      
-      // Approved users can create, update, or delete Job Orders
       allow create, update, delete: if isApproved();
 
-      // PRODUCTION SUBCOLLECTION: jobOrders/{jobOrderId}/production/{dateStr}
       match /production/{dateStr} {
-        // Approved users can read, create, update, and delete daily production records
         allow read, create, update, delete: if isApproved();
       }
     }

@@ -35,8 +35,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(currentUser);
       if (currentUser) {
         try {
-          // 1. Check if user document exists in users/{uid}
-          const fetchedRole = await getCurrentUserRole(currentUser.uid);
+          // 1. Check if user document exists in users/{email} or users/{uid}
+          const fetchedRole = await getCurrentUserRole(currentUser);
           if (fetchedRole) {
             setIsApproved(true);
             setRole(fetchedRole);
