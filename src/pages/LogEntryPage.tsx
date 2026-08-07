@@ -424,44 +424,109 @@ export function LogEntryPage() {
         <Panel title="Step 2 — Job Details">
           <div className="grid gap-5 lg:grid-cols-3">
             {/* Sub-card 1: Job Identification */}
-            <div className="flex flex-col justify-between rounded-[14px] border border-[#E5E5EA] bg-[#FBFBFC] p-4.5">
+            <div className="flex flex-col justify-between rounded-[14px] border border-[#E5E5EA] bg-[#FBFBFC] p-4.5 lg:col-span-1">
               <div>
                 <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#6E6E73]">
                   Job Identification
                 </p>
                 <div className="space-y-3.5">
+                  {/* Job Order Dropdown Choice */}
                   <div>
                     <label
-                      htmlFor={`${uid}-jo`}
-                      className="mb-1.5 block text-[12px] font-medium text-[#1D1D1F]"
+                      htmlFor={`${uid}-jo-select`}
+                      className="mb-1.5 block text-[12px] font-semibold text-[#1D1D1F]"
                     >
-                      Job order
+                      Select Job Order (JO#)
                     </label>
-                    <div
-                      className={cn(
-                        "flex items-center overflow-hidden rounded-[12px] border border-[#D2D2D7] bg-white transition-all focus-within:border-[#0071E3] focus-within:ring-2 focus-within:ring-[#0071E3]/20",
-                        errors.jobOrder && "border-[#ff3b30]",
-                      )}
-                    >
-                      <span className="flex h-[42px] select-none items-center border-r border-[#D2D2D7] bg-[#F5F5F7] px-3.5 text-[12px] font-bold text-[#1D1D1F] shrink-0">
-                        JO#
-                      </span>
-                      <input
-                        id={`${uid}-jo`}
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={joNumber}
-                        onChange={(e) => handleJoNumberChange(e.target.value)}
-                        placeholder="e.g. 101 or 2408"
-                        className="h-[42px] w-full bg-transparent px-3 text-[14px] font-medium text-[#1D1D1F] outline-none placeholder:text-[#A1A1A6]"
-                      />
-                    </div>
+
+                    {loadingOrders ? (
+                      <div className="flex h-[42px] items-center gap-2 rounded-[12px] border border-[#D2D2D7] bg-[#F5F5F7] px-3 text-[13px] text-[#6E6E73]">
+                        <RefreshCw className="h-4 w-4 animate-spin text-[#0071E3]" />
+                        <span>Loading Job Orders...</span>
+                      </div>
+                    ) : (
+                      <select
+                        id={`${uid}-jo-select`}
+                        value={selectedJoId}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setSelectedJoId(val);
+                          const matched = jobOrders.find((o) => o.id === val);
+                          if (matched) {
+                            const match = matched.workOrder.match(/\d+/);
+                            setJoNumber(match ? match[0] : matched.workOrder);
+                            setBrandName(matched.brand || "");
+                          } else if (val === "NEW") {
+                            setSelectedJoId("");
+                            setJoNumber("");
+                            setBrandName("");
+                          }
+                        }}
+                        className={cn(
+                          "h-[42px] w-full rounded-[12px] border border-[#D2D2D7] bg-white px-3 text-[14px] font-semibold text-[#1D1D1F] outline-none transition-all focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 cursor-pointer",
+                          errors.jobOrder && "border-[#ff3b30]",
+                        )}
+                      >
+                        <option value="" disabled>
+                          -- Select a Job Order to log data --
+                        </option>
+                        {jobOrders.map((jo) => (
+                          <option key={jo.id} value={jo.id}>
+                            {jo.id} — {jo.brand || "Standard"} ({jo.workOrder})
+                          </option>
+                        ))}
+                        <option value="NEW">+ Create New Job Order...</option>
+                      </select>
+                    )}
                     {errors.jobOrder && (
                       <p className="mt-1 text-[12px] text-[#ff3b30]">{errors.jobOrder}</p>
                     )}
                   </div>
 
+                  {/* Quick JO Clickable Pills */}
+                  {jobOrders.length > 0 && (
+                    <div>
+                      <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.05em] text-[#6E6E73]">
+                        Click to Select JO#:
+                      </p>
+                      <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                        {jobOrders.map((jo) => {
+                          const isSelected = selectedJoId === jo.id;
+                          return (
+                            <button
+                              key={jo.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedJoId(jo.id);
+                                const match = jo.workOrder.match(/\d+/);
+                                setJoNumber(match ? match[0] : jo.workOrder);
+                                setBrandName(jo.brand || "");
+                                setErrors((prev) => ({ ...prev, jobOrder: undefined }));
+                              }}
+                              className={cn(
+                                "flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[12px] font-bold transition-all cursor-pointer",
+                                isSelected
+                                  ? "border-[#0071E3] bg-[#0071E3] text-white shadow-sm"
+                                  : "border-[#D2D2D7] bg-white text-[#1D1D1F] hover:border-[#0071E3] hover:bg-[#0071E3]/5",
+                              )}
+                            >
+                              <span>{jo.id}</span>
+                              <span
+                                className={cn(
+                                  "text-[10px] font-normal",
+                                  isSelected ? "text-white/80" : "text-[#6E6E73]",
+                                )}
+                              >
+                                ({jo.brand || jo.workOrder})
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Selected JO Details */}
                   <div>
                     <label
                       htmlFor={`${uid}-brand`}
