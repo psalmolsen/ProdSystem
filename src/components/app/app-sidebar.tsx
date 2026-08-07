@@ -17,6 +17,7 @@ import {
   Settings,
   ChevronRight,
   LogOut,
+  Tag,
 } from "lucide-react";
 import logo from "@/assets/ccb-logo.png.asset.json";
 import { cn } from "@/lib/utils";
@@ -27,10 +28,11 @@ const groups: { label: string; items: { to: string; label: string; icon: typeof 
   {
     label: "Overview",
     items: [
-      { to: "/",          label: "Dashboard",         icon: LayoutDashboard },
-      { to: "/job-orders",label: "Job Orders",        icon: FileText },
-      { to: "/entry",     label: "Production Entry",  icon: ClipboardList },
-      { to: "/tracking",  label: "Cylinder Tracking", icon: ScanBarcode },
+      { to: "/",              label: "Dashboard",         icon: LayoutDashboard },
+      { to: "/brand-summary", label: "Brand Summary",     icon: Tag },
+      { to: "/job-orders",    label: "Job Orders",        icon: FileText },
+      { to: "/entry",         label: "Production Entry",  icon: ClipboardList },
+      { to: "/tracking",      label: "Cylinder Tracking", icon: ScanBarcode },
     ],
   },
   {
@@ -47,6 +49,7 @@ const groups: { label: string; items: { to: string; label: string; icon: typeof 
   {
     label: "Exceptions",
     items: [
+      { to: "/backjob",          label: "Backjob Management", icon: RotateCcw },
       { to: "/rework",           label: "Rework",           icon: RotateCcw, badge: "17" },
       { to: "/customer-returns",  label: "Customer Returns",  icon: Undo2 },
     ],

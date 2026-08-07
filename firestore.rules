@@ -55,5 +55,10 @@ service cloud.firestore {
       }
     }
 
+    // BACKJOBS COLLECTION: backjobs/{backjobId}
+    match /backjobs/{backjobId} {
+      allow read, create, update, delete: if isApproved();
+    }
+
   }
 }

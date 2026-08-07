@@ -156,17 +156,36 @@ export function LogEntryPage() {
   const [submitting, setSubmitting] = useState(false);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
 
+  // Helper to select and populate JO details
+  const selectAndConfirmJo = (jo: JobOrder) => {
+    setSelectedJoId(jo.id);
+    const digits = jo.workOrder.replace(/\D/g, "");
+    setJoNumber(digits || jo.id);
+    setBrandName(jo.brand || "");
+    setWorkOrderCnf(jo.cnf ? String(jo.cnf) : "");
+    setWorkOrderCf(jo.cf ? String(jo.cf) : "");
+    setWorkOrderC(jo.cn ? String(jo.cn) : (jo.c ? String(jo.c) : ""));
+    sessionStorage.setItem("activeMonitoringJoId", jo.id);
+  };
+
   // Load Job Orders directly from Firestore
   const loadJobOrders = async () => {
     setLoadingOrders(true);
     try {
       const orders = await getAllJobOrders();
       setJobOrders(orders);
-      if (orders.length > 0 && !selectedJoId && !joNumber) {
-        setSelectedJoId(orders[0].id);
-        const match = orders[0].workOrder.match(/\d+/);
-        setJoNumber(match ? match[0] : orders[0].workOrder);
-        setBrandName(orders[0].brand || "");
+      
+      const storedJoId = sessionStorage.getItem("activeMonitoringJoId");
+      if (storedJoId) {
+        const found = orders.find((o) => o.id === storedJoId);
+        if (found) {
+          selectAndConfirmJo(found);
+          return;
+        }
+      }
+
+      if (orders.length > 0) {
+        selectAndConfirmJo(orders[0]);
       }
     } catch (err) {
       console.error("Failed to load Job Orders from Firestore:", err);
@@ -195,11 +214,10 @@ export function LogEntryPage() {
     }
     const matched = jobOrders.find((o) => {
       const digits = o.workOrder.replace(/\D/g, "");
-      return digits === cleanNum;
+      return digits === cleanNum || o.id === `JO-${cleanNum}` || o.id === cleanNum;
     });
     if (matched) {
-      setSelectedJoId(matched.id);
-      setBrandName(matched.brand);
+      selectAndConfirmJo(matched);
     } else {
       setSelectedJoId("");
     }
@@ -360,74 +378,14 @@ export function LogEntryPage() {
           </div>
         )}
 
-        {/* ── Department selector ──────────────────────────────────────────── */}
-        <section className="rounded-[16px] border border-[#D2D2D7] bg-white shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
-          <div className="border-b border-[#D2D2D7] px-6 pt-5 pb-4">
-            <p className="mb-1 text-[12px] font-semibold uppercase tracking-[0.08em] text-[#6E6E73]">
-              Step 1 — Select Department
-            </p>
-            <p className="text-[13px] text-[#6E6E73]">
-              Choose the department you are logging entries for.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-3 p-5">
-            {DEPT_TABS.map((dept) => {
-              const isActive = activeDeptId === dept.id;
-              const Icon = dept.icon;
-
-              return (
-                <button
-                  key={dept.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveDeptId(dept.id);
-                    setSavedMessage(null);
-                    setErrors({});
-                  }}
-                  style={
-                    isActive
-                      ? {
-                          backgroundColor: dept.activeBg,
-                          color: dept.activeText,
-                          borderColor: dept.activeBorder,
-                        }
-                      : {}
-                  }
-                  className={cn(
-                    "relative flex items-center gap-2.5 rounded-[12px] border px-4 py-3 text-[13px] font-medium transition-all duration-200",
-                    isActive
-                      ? "shadow-[0_2px_12px_rgba(0,0,0,0.10)]"
-                      : "border-[#D2D2D7] bg-[#F5F5F7] text-[#1D1D1F]/60 hover:border-[#C7C7CC] hover:bg-white hover:text-[#1D1D1F]",
-                  )}
-                >
-                  <Icon
-                    className="h-[17px] w-[17px] shrink-0"
-                    strokeWidth={isActive ? 2 : 1.5}
-                    style={isActive ? { color: dept.activeText } : {}}
-                  />
-                  <span>{dept.label}</span>
-
-                  {isActive && (
-                    <span
-                      className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full border-2 border-white"
-                      style={{ backgroundColor: dept.color }}
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
         {/* ── Job details ──────────────────────────────────────────────────── */}
-        <Panel title="Step 2 — Job Details">
-          <div className="grid gap-5 lg:grid-cols-3">
-            {/* Sub-card 1: Job Identification */}
-            <div className="flex flex-col justify-between rounded-[14px] border border-[#E5E5EA] bg-[#FBFBFC] p-4.5 lg:col-span-1">
+        <Panel title="Step 2 — Job Order & Shift Details">
+          <div className="grid gap-5 lg:grid-cols-2">
+            {/* Sub-card 1: Job Identification & Auto-loaded Info */}
+            <div className="flex flex-col justify-between rounded-[14px] border border-[#E5E5EA] bg-[#FBFBFC] p-4.5">
               <div>
                 <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#6E6E73]">
-                  Job Identification
+                  Selected Job Order Details
                 </p>
                 <div className="space-y-3.5">
                   {/* Job Order Dropdown Choice */}
@@ -436,7 +394,7 @@ export function LogEntryPage() {
                       htmlFor={`${uid}-jo-select`}
                       className="mb-1.5 block text-[12px] font-semibold text-[#1D1D1F]"
                     >
-                      Select Job Order (JO#)
+                      Select Active Job Order
                     </label>
 
                     {loadingOrders ? (
@@ -450,16 +408,9 @@ export function LogEntryPage() {
                         value={selectedJoId}
                         onChange={(e) => {
                           const val = e.target.value;
-                          setSelectedJoId(val);
                           const matched = jobOrders.find((o) => o.id === val);
                           if (matched) {
-                            const match = matched.workOrder.match(/\d+/);
-                            setJoNumber(match ? match[0] : matched.workOrder);
-                            setBrandName(matched.brand || "");
-                          } else if (val === "NEW") {
-                            setSelectedJoId("");
-                            setJoNumber("");
-                            setBrandName("");
+                            selectAndConfirmJo(matched);
                           }
                         }}
                         className={cn(
@@ -472,10 +423,9 @@ export function LogEntryPage() {
                         </option>
                         {jobOrders.map((jo) => (
                           <option key={jo.id} value={jo.id}>
-                            {jo.id} — {jo.brand || "Standard"} ({jo.workOrder})
+                            {jo.id} — {jo.brand || "Standard Brand"} ({jo.workOrder})
                           </option>
                         ))}
-                        <option value="NEW">+ Create New Job Order...</option>
                       </select>
                     )}
                     {errors.jobOrder && (
@@ -483,13 +433,31 @@ export function LogEntryPage() {
                     )}
                   </div>
 
+                  {/* Auto-loaded Details Badges */}
+                  {selectedJoId && (
+                    <div className="rounded-[12px] border border-[#D2D2D7] bg-white p-3.5 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[12px] text-[#6E6E73]">Brand Name:</span>
+                        <span className="text-[13px] font-bold text-[#1D1D1F]">{brandName || "Standard"}</span>
+                      </div>
+                      <div className="flex items-center justify-between pt-2 border-t border-[#E5E5EA] text-[12px]">
+                        <span className="text-[#6E6E73]">Quantities:</span>
+                        <div className="flex items-center gap-2">
+                          <span className="rounded bg-[#F5F5F7] px-2 py-0.5 text-[11px] font-semibold text-[#1D1D1F]">CNF: {workOrderCnf || 0}</span>
+                          <span className="rounded bg-[#F5F5F7] px-2 py-0.5 text-[11px] font-semibold text-[#1D1D1F]">CF: {workOrderCf || 0}</span>
+                          <span className="rounded bg-[#F5F5F7] px-2 py-0.5 text-[11px] font-semibold text-[#1D1D1F]">CN: {workOrderC || 0}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Quick JO Clickable Pills */}
                   {jobOrders.length > 0 && (
                     <div>
                       <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.05em] text-[#6E6E73]">
-                        Click to Select JO#:
+                        Quick Select JO#:
                       </p>
-                      <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                      <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto">
                         {jobOrders.map((jo) => {
                           const isSelected = selectedJoId === jo.id;
                           return (
@@ -497,10 +465,7 @@ export function LogEntryPage() {
                               key={jo.id}
                               type="button"
                               onClick={() => {
-                                setSelectedJoId(jo.id);
-                                const match = jo.workOrder.match(/\d+/);
-                                setJoNumber(match ? match[0] : jo.workOrder);
-                                setBrandName(jo.brand || "");
+                                selectAndConfirmJo(jo);
                                 setErrors((prev) => ({ ...prev, jobOrder: undefined }));
                               }}
                               className={cn(
@@ -525,80 +490,6 @@ export function LogEntryPage() {
                       </div>
                     </div>
                   )}
-
-                  {/* Selected JO Details */}
-                  <div>
-                    <label
-                      htmlFor={`${uid}-brand`}
-                      className="mb-1.5 block text-[12px] font-medium text-[#1D1D1F]"
-                    >
-                      Brand name
-                    </label>
-                    <input
-                      id={`${uid}-brand`}
-                      type="text"
-                      value={brandName}
-                      onChange={(e) => setBrandName(e.target.value)}
-                      placeholder="e.g. FireMaster / Akxel"
-                      className="h-[42px] w-full rounded-[12px] border border-[#D2D2D7] bg-white px-3 text-[14px] font-medium text-[#1D1D1F] outline-none transition-all focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Sub-card 2: Work Order Quantities (CNF, CF, C) */}
-            <div className="rounded-[14px] border border-[#E5E5EA] bg-[#FBFBFC] p-4.5">
-              <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#6E6E73]">
-                Work Order Quantities
-              </p>
-              <div className="space-y-2.5">
-                {/* CNF */}
-                <div className="flex items-center overflow-hidden rounded-[12px] border border-[#D2D2D7] bg-white transition-all focus-within:border-[#0071E3] focus-within:ring-2 focus-within:ring-[#0071E3]/20">
-                  <span className="flex h-[40px] w-[70px] select-none items-center justify-center border-r border-[#D2D2D7] bg-[#F5F5F7] text-[12px] font-bold text-[#1D1D1F] shrink-0">
-                    CNF
-                  </span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={workOrderCnf}
-                    onChange={(e) => setWorkOrderCnf(e.target.value.replace(/\D/g, ""))}
-                    placeholder="0"
-                    className="h-[40px] w-full bg-transparent px-3 text-[14px] font-medium tabular text-[#1D1D1F] outline-none placeholder:text-[#A1A1A6]"
-                  />
-                </div>
-
-                {/* CF */}
-                <div className="flex items-center overflow-hidden rounded-[12px] border border-[#D2D2D7] bg-white transition-all focus-within:border-[#0071E3] focus-within:ring-2 focus-within:ring-[#0071E3]/20">
-                  <span className="flex h-[40px] w-[70px] select-none items-center justify-center border-r border-[#D2D2D7] bg-[#F5F5F7] text-[12px] font-bold text-[#1D1D1F] shrink-0">
-                    CF
-                  </span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={workOrderCf}
-                    onChange={(e) => setWorkOrderCf(e.target.value.replace(/\D/g, ""))}
-                    placeholder="0"
-                    className="h-[40px] w-full bg-transparent px-3 text-[14px] font-medium tabular text-[#1D1D1F] outline-none placeholder:text-[#A1A1A6]"
-                  />
-                </div>
-
-                {/* C */}
-                <div className="flex items-center overflow-hidden rounded-[12px] border border-[#D2D2D7] bg-white transition-all focus-within:border-[#0071E3] focus-within:ring-2 focus-within:ring-[#0071E3]/20">
-                  <span className="flex h-[40px] w-[70px] select-none items-center justify-center border-r border-[#D2D2D7] bg-[#F5F5F7] text-[12px] font-bold text-[#1D1D1F] shrink-0">
-                    C
-                  </span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={workOrderC}
-                    onChange={(e) => setWorkOrderC(e.target.value.replace(/\D/g, ""))}
-                    placeholder="0"
-                    className="h-[40px] w-full bg-transparent px-3 text-[14px] font-medium tabular text-[#1D1D1F] outline-none placeholder:text-[#A1A1A6]"
-                  />
                 </div>
               </div>
             </div>
@@ -667,73 +558,151 @@ export function LogEntryPage() {
           </div>
         </Panel>
 
-        {/* ── Process rows table ─────────────────────────────────────────────── */}
+        {/* ── Single combined Panel for Step 1 (Select Department) and Step 3 (Process Log) ── */}
         <Panel
-          title={`Step 3 — Process Log Entries (${activeDept.label})`}
-          description="Enter output count for each process performed during this time slot."
+          title={`Department & Productivity Log (${activeDept.label})`}
+          description="Select a department and enter output counts for each sub-process."
         >
-          {errors.rows && (
-            <div className="mb-4 rounded-[12px] border border-[#FFD0D0] bg-[#FFF2F2] p-3.5 text-[13px] text-[#DC2626]">
-              {errors.rows}
-            </div>
-          )}
+          <div className="space-y-5">
+            {/* Step 1 Inner Sub-Card: Department Selection */}
+            <div className="rounded-[14px] border border-[#E5E5EA] bg-[#FBFBFC] p-4.5">
+              <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#6E6E73]">
+                Step 1 — Select Department
+              </p>
+              <div className="flex flex-wrap gap-3">
+                {DEPT_TABS.map((dept) => {
+                  const isActive = activeDeptId === dept.id;
+                  const Icon = dept.icon;
 
-          <div className="overflow-x-auto rounded-[12px] border border-[#D2D2D7]">
-            <table className="w-full text-left text-[13px]">
-              <thead>
-                <tr className="border-b border-[#D2D2D7] bg-[#F5F5F7]/80 text-[11px] font-bold uppercase tracking-[0.05em] text-[#6E6E73]">
-                  <th className="px-4 py-3 min-w-[220px]">Sub-Process</th>
-                  <th className="px-4 py-3 min-w-[120px]">Output Count</th>
-                  <th className="px-4 py-3 min-w-[180px]">Personnel Name</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#D2D2D7]">
-                {rows.map((row, index) => {
-                  const isFilled = row.output.trim() !== "" && Number(row.output) > 0;
                   return (
-                    <tr
-                      key={row.subProcess}
+                    <button
+                      key={dept.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveDeptId(dept.id);
+                        setSavedMessage(null);
+                        setErrors({});
+                      }}
+                      style={
+                        isActive
+                          ? {
+                              backgroundColor: dept.activeBg,
+                              color: dept.activeText,
+                              borderColor: dept.activeBorder,
+                            }
+                          : {}
+                      }
                       className={cn(
-                        "transition-colors",
-                        isFilled ? "bg-[#0071E3]/5" : "hover:bg-[#F5F5F7]/40",
+                        "relative flex items-center gap-2.5 rounded-[12px] border px-4 py-3 text-[13px] font-medium transition-all duration-200 cursor-pointer",
+                        isActive
+                          ? "shadow-[0_2px_12px_rgba(0,0,0,0.10)]"
+                          : "border-[#D2D2D7] bg-white text-[#1D1D1F]/70 hover:border-[#C7C7CC] hover:bg-[#F5F5F7] hover:text-[#1D1D1F]",
                       )}
                     >
-                      <td className="px-4 py-3 font-semibold text-[#1D1D1F]">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="h-2 w-2 rounded-full"
-                            style={{ backgroundColor: activeDept.color }}
-                          />
-                          <span>{row.subProcess}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-2">
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          value={row.output}
-                          onChange={(e) =>
-                            updateRow(index, "output", e.target.value.replace(/\D/g, ""))
-                          }
-                          placeholder="0"
-                          className="h-[38px] w-24 rounded-[10px] border border-[#D2D2D7] bg-white px-3 text-center text-[14px] font-bold text-[#1D1D1F] outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20"
+                      <Icon
+                        className="h-[17px] w-[17px] shrink-0"
+                        strokeWidth={isActive ? 2 : 1.5}
+                        style={isActive ? { color: dept.activeText } : {}}
+                      />
+                      <span>{dept.label}</span>
+
+                      {isActive && (
+                        <span
+                          className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full border-2 border-white"
+                          style={{ backgroundColor: dept.color }}
                         />
-                      </td>
-                      <td className="px-4 py-2">
-                        <input
-                          type="text"
-                          value={row.personnel}
-                          onChange={(e) => updateRow(index, "personnel", e.target.value)}
-                          placeholder="e.g. J. Dela Cruz"
-                          className="h-[38px] w-full max-w-[240px] rounded-[10px] border border-[#D2D2D7] bg-white px-3 text-[13px] font-medium text-[#1D1D1F] outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20"
-                        />
-                      </td>
-                    </tr>
+                      )}
+                    </button>
                   );
                 })}
-              </tbody>
-            </table>
+              </div>
+            </div>
+
+            {/* Step 3 Inner Sub-Card: Sub-Process Log Entries */}
+            <div className="rounded-[14px] border border-[#E5E5EA] bg-[#FBFBFC] p-4.5">
+              <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#6E6E73]">
+                Step 3 — Process Log Entries ({activeDept.label})
+              </p>
+
+              {errors.rows && (
+                <div className="mb-4 rounded-[12px] border border-[#FFD0D0] bg-[#FFF2F2] p-3.5 text-[13px] text-[#DC2626]">
+                  {errors.rows}
+                </div>
+              )}
+
+              <div className="overflow-x-auto rounded-[12px] border border-[#D2D2D7] bg-white">
+                <table className="w-full text-left text-[13px]">
+                  <thead>
+                    <tr className="border-b border-[#D2D2D7] bg-[#F5F5F7]/80 text-[11px] font-bold uppercase tracking-[0.05em] text-[#6E6E73]">
+                      <th className="px-4 py-3 min-w-[220px]">Sub-Process</th>
+                      <th className="px-4 py-3 min-w-[120px]">Output Count</th>
+                      <th className="px-4 py-3 min-w-[180px]">Personnel Name</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#D2D2D7]">
+                    {rows.map((row, index) => {
+                      const isFilled = row.output.trim() !== "" && Number(row.output) > 0;
+                      return (
+                        <tr
+                          key={row.subProcess}
+                          className={cn(
+                            "transition-colors",
+                            isFilled ? "bg-[#0071E3]/5" : "hover:bg-[#F5F5F7]/40",
+                          )}
+                        >
+                          <td className="px-4 py-3 font-semibold text-[#1D1D1F]">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="h-2 w-2 rounded-full"
+                                style={{ backgroundColor: activeDept.color }}
+                              />
+                              <span>{row.subProcess}</span>
+                              {row.subProcess === "Good" && (
+                                <span className="rounded-full bg-[#34C759]/10 px-2 py-0.5 text-[10px] font-bold text-[#34C759]">
+                                  Passed Good
+                                </span>
+                              )}
+                              {row.subProcess === "Buffer" && (
+                                <span className="rounded-full bg-[#0071E3]/10 px-2 py-0.5 text-[10px] font-bold text-[#0071E3]">
+                                  Buffer Tanks
+                                </span>
+                              )}
+                              {row.subProcess === "Reject" && (
+                                <span className="rounded-full bg-[#FF3B30]/10 px-2 py-0.5 text-[10px] font-bold text-[#FF3B30]">
+                                  Reject Tanks
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-2">
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              value={row.output}
+                              onChange={(e) =>
+                                updateRow(index, "output", e.target.value.replace(/\D/g, ""))
+                              }
+                              placeholder="0"
+                              className="h-[38px] w-24 rounded-[10px] border border-[#D2D2D7] bg-white px-3 text-center text-[14px] font-bold text-[#1D1D1F] outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20"
+                            />
+                          </td>
+                          <td className="px-4 py-2">
+                            <input
+                              type="text"
+                              value={row.personnel}
+                              onChange={(e) => updateRow(index, "personnel", e.target.value)}
+                              placeholder="e.g. J. Dela Cruz"
+                              className="h-[38px] w-full max-w-[240px] rounded-[10px] border border-[#D2D2D7] bg-white px-3 text-[13px] font-medium text-[#1D1D1F] outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20"
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
           <div className="mt-5 flex items-center justify-between pt-2 border-t border-[#D2D2D7]">

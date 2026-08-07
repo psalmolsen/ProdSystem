@@ -56,7 +56,7 @@ export const STATIONS: StationConfig[] = [
     id: "Cosmetics",
     label: "Cosmetics",
     direction: "ltr",
-    subProcesses: ["Tacking/Weighing", "Brand Label", "TW/Warning/RQ", "Final QC", "Good"],
+    subProcesses: ["Tacking/Weighing", "Brand Label", "TW/Warning/RQ", "Final QC", "Good", "Buffer", "Reject"],
   },
 ];
 

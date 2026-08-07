@@ -19,5 +19,7 @@ export const PROCESSES_BY_DEPARTMENT: Record<DepartmentName, readonly string[]> 
     "TW / Warning / RQ",
     "Final QC",
     "Good",
+    "Buffer",
+    "Reject",
   ],
 } as const;

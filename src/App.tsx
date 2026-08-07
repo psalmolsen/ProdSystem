@@ -4,6 +4,8 @@ import { Dashboard } from "@/pages/Dashboard";
 import { DeptEntryPage } from "@/pages/DeptEntryPage";
 import { LogEntryPage } from "@/pages/LogEntryPage";
 import { JobOrdersPage } from "@/pages/JobOrdersPage";
+import { BackjobPage } from "@/pages/BackjobPage";
+import { BrandSummaryPage } from "@/pages/BrandSummaryPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { PendingApprovalPage } from "@/pages/PendingApprovalPage";
 import { AdminAccessRequestsPage } from "@/pages/AdminAccessRequestsPage";
@@ -72,6 +74,10 @@ export default function App() {
     page = <LogEntryPage />;
   } else if (hash === "#/job-orders") {
     page = <JobOrdersPage />;
+  } else if (hash === "#/backjob" || hash === "#/backjobs") {
+    page = <BackjobPage />;
+  } else if (hash === "#/brand-summary" || hash === "#/brands") {
+    page = <BrandSummaryPage />;
   } else if (hash === "#/access-requests" || hash === "#/admin/access-requests") {
     page = <AdminAccessRequestsPage />;
   } else if (DEPT_ROUTES[hash]) {

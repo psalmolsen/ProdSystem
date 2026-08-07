@@ -156,6 +156,14 @@ function VerticalConnector({
   );
 }
 
+const STATION_LABELS: Record<StationId, string> = {
+  CTC1: "CTC 1 · Testing & Cleaning",
+  CTC2: "CTC 2 · Valve Assembly & Pressure",
+  Hotworks: "Hotworks · Welding & Refurbish",
+  Painting: "Painting · Shotblast & Coating",
+  Cosmetics: "Cosmetics · Inspection & Weighing",
+};
+
 function StationRow({
   station,
   index,
@@ -190,14 +198,16 @@ function StationRow({
 
   return (
     <div>
-      <div className="mb-2 flex items-center justify-center gap-2">
-        <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[rgba(0,113,227,0.10)] px-1 text-[10px] font-semibold tabular text-[#0071E3]">
+      <div className="mb-2.5 flex items-center justify-center gap-2">
+        <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[rgba(0,113,227,0.10)] px-1.5 text-[11px] font-bold tabular text-[#0071E3]">
           {String(index + 1).padStart(2, "0")}
         </span>
-        <h3 className="eyebrow">{station.id}</h3>
+        <h3 className="text-[12px] font-bold tracking-tight text-[#1D1D1F] uppercase">
+          {STATION_LABELS[station.id] || station.id}
+        </h3>
         <DirectionIcon
-          className="h-4 w-4 text-[#6E6E73]/50"
-          strokeWidth={1.5}
+          className="h-4 w-4 text-[#0071E3]/60"
+          strokeWidth={1.75}
         />
       </div>
 
