@@ -92,13 +92,17 @@ export function BrandSummaryPage() {
     return jobOrders.map((jo) => {
       const totals = totalsMap[jo.id] || {};
 
+      const size11 = Number(jo.size11kg || 0);
+      const size22 = Number(jo.size22kg || 0);
+      const size50 = Number(jo.size50kg || 0);
+      const variantSum = size11 + size22 + size50;
       const cnf = Number(jo.cnf || 0);
       const cf = Number(jo.cf || 0);
       const cn = Number(jo.cn || jo.c || 0);
       const othersSum = jo.otherItems
         ? jo.otherItems.reduce((acc, item) => acc + Number(item.qty || 0), 0)
         : 0;
-      const targetTotal = cnf + cf + cn + othersSum;
+      const targetTotal = variantSum > 0 ? variantSum : (cnf + cf + cn + othersSum);
 
       const deliveredCount = totals["Cosmetics::Good"] ?? 0;
       const rejectCount = totals["Cosmetics::Reject"] ?? 0;
@@ -349,6 +353,7 @@ export function BrandSummaryPage() {
                       <thead>
                         <tr className="border-b border-[#D2D2D7] bg-white text-[11px] font-bold uppercase tracking-[0.05em] text-[#6E6E73]">
                           <th className="px-5 py-3 min-w-[110px]">JO#</th>
+                          <th className="px-5 py-3 min-w-[100px]">Variant</th>
                           <th className="px-5 py-3 min-w-[240px]">Work Order (CNF · CF · CN)</th>
                           <th className="px-5 py-3 min-w-[110px] text-right">Target Demand</th>
                           <th className="px-5 py-3 min-w-[100px] text-right">Delivered</th>
@@ -372,6 +377,54 @@ export function BrandSummaryPage() {
                             <tr key={m.jobOrder.id} className="hover:bg-[#F5F5F7]/50 transition-colors">
                               <td className="px-5 py-3.5 font-bold text-[#0071E3]">
                                 {m.jobOrder.id}
+                              </td>
+                              <td className="px-5 py-3.5 text-[12px]">
+                                {(() => {
+                                  const v11 = m.jobOrder.variants?.size11kg;
+                                  const v22 = m.jobOrder.variants?.size22kg;
+                                  const v50 = m.jobOrder.variants?.size50kg;
+                                  const hasVariants = Boolean(v11 || v22 || v50);
+
+                                  if (!hasVariants) {
+                                    return (
+                                      <div className="grid grid-cols-[45px_minmax(75px,auto)_minmax(60px,auto)_minmax(60px,auto)] items-center gap-x-3 text-[12px]">
+                                        <span className="font-bold text-[#0071E3]">11kg:</span>
+                                        <span><span className="text-[#6E6E73] font-medium">CNF:</span> <span className="font-semibold text-[#1D1D1F]">{m.jobOrder.cnf || 0}</span></span>
+                                        <span><span className="text-[#6E6E73] font-medium">CF:</span> <span className="font-semibold text-[#1D1D1F]">{m.jobOrder.cf || 0}</span></span>
+                                        <span><span className="text-[#6E6E73] font-medium">CN:</span> <span className="font-semibold text-[#1D1D1F]">{m.jobOrder.cn || m.jobOrder.c || 0}</span></span>
+                                      </div>
+                                    );
+                                  }
+
+                                  return (
+                                    <div className="space-y-1 text-[12px]">
+                                      {v11 && (Number(v11.cnf || 0) > 0 || Number(v11.cf || 0) > 0 || Number(v11.cn || 0) > 0) && (
+                                        <div className="grid grid-cols-[45px_minmax(75px,auto)_minmax(60px,auto)_minmax(60px,auto)] items-center gap-x-3 text-[12px]">
+                                          <span className="font-bold text-[#0071E3]">11kg:</span>
+                                          <span><span className="text-[#6E6E73] font-medium">CNF:</span> <span className="font-semibold text-[#1D1D1F]">{v11.cnf || 0}</span></span>
+                                          <span><span className="text-[#6E6E73] font-medium">CF:</span> <span className="font-semibold text-[#1D1D1F]">{v11.cf || 0}</span></span>
+                                          <span><span className="text-[#6E6E73] font-medium">CN:</span> <span className="font-semibold text-[#1D1D1F]">{v11.cn || 0}</span></span>
+                                        </div>
+                                      )}
+                                      {v22 && (Number(v22.cnf || 0) > 0 || Number(v22.cf || 0) > 0 || Number(v22.cn || 0) > 0) && (
+                                        <div className="grid grid-cols-[45px_minmax(75px,auto)_minmax(60px,auto)_minmax(60px,auto)] items-center gap-x-3 text-[12px]">
+                                          <span className="font-bold text-[#0071E3]">22kg:</span>
+                                          <span><span className="text-[#6E6E73] font-medium">CNF:</span> <span className="font-semibold text-[#1D1D1F]">{v22.cnf || 0}</span></span>
+                                          <span><span className="text-[#6E6E73] font-medium">CF:</span> <span className="font-semibold text-[#1D1D1F]">{v22.cf || 0}</span></span>
+                                          <span><span className="text-[#6E6E73] font-medium">CN:</span> <span className="font-semibold text-[#1D1D1F]">{v22.cn || 0}</span></span>
+                                        </div>
+                                      )}
+                                      {v50 && (Number(v50.cnf || 0) > 0 || Number(v50.cf || 0) > 0 || Number(v50.cn || 0) > 0) && (
+                                        <div className="grid grid-cols-[45px_minmax(75px,auto)_minmax(60px,auto)_minmax(60px,auto)] items-center gap-x-3 text-[12px]">
+                                          <span className="font-bold text-[#0071E3]">50kg:</span>
+                                          <span><span className="text-[#6E6E73] font-medium">CNF:</span> <span className="font-semibold text-[#1D1D1F]">{v50.cnf || 0}</span></span>
+                                          <span><span className="text-[#6E6E73] font-medium">CF:</span> <span className="font-semibold text-[#1D1D1F]">{v50.cf || 0}</span></span>
+                                          <span><span className="text-[#6E6E73] font-medium">CN:</span> <span className="font-semibold text-[#1D1D1F]">{v50.cn || 0}</span></span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
                               </td>
                               <td className="px-5 py-3.5 font-medium text-[#1D1D1F]">
                                 {reqParts.join(" · ")}

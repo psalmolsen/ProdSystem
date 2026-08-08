@@ -199,3 +199,19 @@ export async function getApprovedUsers(): Promise<UserDocument[]> {
     return [];
   }
 }
+
+export async function revokeUserAccess(docIdOrUid: string, uid?: string): Promise<void> {
+  const directRef = doc(db, "users", docIdOrUid);
+  const directSnap = await getDoc(directRef);
+
+  if (directSnap.exists()) {
+    await deleteDoc(directRef);
+    return;
+  }
+
+  const targetUid = uid || docIdOrUid;
+  const q = query(collection(db, "users"), where("uid", "==", targetUid));
+  const snap = await getDocs(q);
+  const deletePromises = snap.docs.map((d) => deleteDoc(d.ref));
+  await Promise.all(deletePromises);
+}

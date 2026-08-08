@@ -4,6 +4,7 @@ import {
   approveAccessRequest,
   rejectAccessRequest,
   getApprovedUsers,
+  revokeUserAccess,
   type UserDocument,
 } from "@/services/firestore/userService";
 import type { AccessRequest } from "@/services/firestore/accessRequestService";
@@ -18,6 +19,7 @@ import {
   Users,
   Clock,
   ShieldAlert,
+  UserX,
 } from "lucide-react";
 
 function formatDate(timestamp: any): string {
@@ -103,6 +105,23 @@ export function AdminAccessRequestsPage() {
     } catch (err: any) {
       console.error("Failed to reject access request:", err);
       setActionError(err.message || "Failed to reject request.");
+      setProcessingUid(null);
+    }
+  };
+
+  const handleRevoke = async (user: UserDocument) => {
+    if (!window.confirm(`Are you sure you want to revoke access for ${user.displayName || user.email}?`)) {
+      return;
+    }
+    const targetKey = user.id || user.uid;
+    setProcessingUid(targetKey);
+    setActionError(null);
+    try {
+      await revokeUserAccess(targetKey, user.uid);
+      await fetchData();
+    } catch (err: any) {
+      console.error("Failed to revoke user access:", err);
+      setActionError(err.message || "Failed to revoke access.");
       setProcessingUid(null);
     }
   };
@@ -361,6 +380,26 @@ export function AdminAccessRequestsPage() {
                         <span className="font-semibold text-[#1D1D1F]">Approved Date:</span>
                         <span>{formatDate(user.approvedAt || user.createdAt)}</span>
                       </div>
+                    </div>
+
+                    {/* Revoke Access Action */}
+                    <div className="mt-4 flex justify-end pt-3 border-t border-[#E5E5EA]">
+                      <button
+                        type="button"
+                        onClick={() => handleRevoke(user)}
+                        disabled={processingUid === (user.id || user.uid)}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-[#FF3B30]/30 bg-white px-3.5 py-2 text-xs font-semibold text-[#FF3B30] hover:bg-[#FFF5F5] hover:border-[#FF3B30] transition-all disabled:opacity-50 cursor-pointer"
+                        title="Revoke and remove system access for this account"
+                      >
+                        {processingUid === (user.id || user.uid) ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <>
+                            <UserX className="h-3.5 w-3.5" />
+                            <span>Revoke Access</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                   </div>
                 </div>

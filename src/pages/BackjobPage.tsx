@@ -15,7 +15,7 @@ import {
   Layers,
 } from "lucide-react";
 import { PageShell, Panel } from "@/components/app/page-shell";
-import type { Backjob, BackjobStatus } from "@/types/backjob";
+import type { JobOrder } from "@/types/jobOrder";
 import {
   createBackjob,
   getAllBackjobs,
@@ -23,7 +23,6 @@ import {
   deleteBackjob,
 } from "@/services/firestore/backjobService";
 import { getAllJobOrders } from "@/services/firestore/jobOrderService";
-import type { JobOrder } from "@/types/jobOrder";
 import { cn } from "@/lib/utils";
 
 const STATUS_CONFIG: Record<

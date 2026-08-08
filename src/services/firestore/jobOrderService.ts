@@ -4,6 +4,7 @@ import {
   getDocs,
   setDoc,
   updateDoc,
+  deleteDoc,
   query,
   where,
   orderBy,
@@ -47,6 +48,11 @@ export async function createJobOrder(
 
   const workOrderVal = input.workOrder?.trim() || `WO-${joId.replace(/^JO-/, "")}`;
   const brandVal = input.brand ? input.brand.trim() : "Standard";
+  const cylinderSizeVal = input.cylinderSize || "11 kg";
+  const variantsVal = input.variants || {};
+  const size11kgVal = Number(input.size11kg) || 0;
+  const size22kgVal = Number(input.size22kg) || 0;
+  const size50kgVal = Number(input.size50kg) || 0;
   const cnfVal = Number(input.cnf) || 0;
   const cfVal = Number(input.cf) || 0;
   const cnVal = Number(input.cn) || 0;
@@ -56,6 +62,11 @@ export async function createJobOrder(
   await setDoc(docRef, {
     workOrder: workOrderVal,
     brand: brandVal,
+    cylinderSize: cylinderSizeVal,
+    variants: variantsVal,
+    size11kg: size11kgVal,
+    size22kg: size22kgVal,
+    size50kg: size50kgVal,
     cnf: cnfVal,
     cf: cfVal,
     cn: cnVal,
@@ -70,6 +81,11 @@ export async function createJobOrder(
     id: joId,
     workOrder: workOrderVal,
     brand: brandVal,
+    cylinderSize: cylinderSizeVal,
+    variants: variantsVal,
+    size11kg: size11kgVal,
+    size22kg: size22kgVal,
+    size50kg: size50kgVal,
     cnf: cnfVal,
     cf: cfVal,
     cn: cnVal,
@@ -95,6 +111,11 @@ export async function getJobOrder(jobOrderId: string): Promise<JobOrder | null> 
     id: snap.id,
     workOrder: String(raw.workOrder || snap.id),
     brand: String(raw.brand || ""),
+    cylinderSize: (raw.cylinderSize as any) || "11 kg",
+    variants: raw.variants || undefined,
+    size11kg: Number(raw.size11kg) || 0,
+    size22kg: Number(raw.size22kg) || 0,
+    size50kg: Number(raw.size50kg) || 0,
     cnf: Number(raw.cnf) || 0,
     cf: Number(raw.cf) || 0,
     cn: cnParsed,
@@ -137,6 +158,11 @@ export async function getAllJobOrders(options?: {
       id: docSnap.id,
       workOrder: String(raw.workOrder || docSnap.id),
       brand: String(raw.brand || ""),
+      cylinderSize: (raw.cylinderSize as any) || "11 kg",
+      variants: raw.variants || undefined,
+      size11kg: Number(raw.size11kg) || 0,
+      size22kg: Number(raw.size22kg) || 0,
+      size50kg: Number(raw.size50kg) || 0,
       cnf: Number(raw.cnf) || 0,
       cf: Number(raw.cf) || 0,
       cn: cnParsed,
@@ -155,6 +181,7 @@ export async function getAllJobOrders(options?: {
         jo.workOrder.toLowerCase().includes(qLower) ||
         jo.brand.toLowerCase().includes(qLower) ||
         jo.id.toLowerCase().includes(qLower) ||
+        (jo.cylinderSize && jo.cylinderSize.toLowerCase().includes(qLower)) ||
         (jo.otherItems && jo.otherItems.some((i) => i.label.toLowerCase().includes(qLower))),
     );
   }
@@ -176,6 +203,11 @@ export async function updateJobOrder(
 
   if (input.workOrder !== undefined) payload.workOrder = input.workOrder.trim();
   if (input.brand !== undefined) payload.brand = input.brand.trim();
+  if (input.cylinderSize !== undefined) payload.cylinderSize = input.cylinderSize;
+  if (input.variants !== undefined) payload.variants = input.variants;
+  if (input.size11kg !== undefined) payload.size11kg = Number(input.size11kg) || 0;
+  if (input.size22kg !== undefined) payload.size22kg = Number(input.size22kg) || 0;
+  if (input.size50kg !== undefined) payload.size50kg = Number(input.size50kg) || 0;
   if (input.cnf !== undefined) payload.cnf = Number(input.cnf) || 0;
   if (input.cf !== undefined) payload.cf = Number(input.cf) || 0;
   if (input.cn !== undefined) {
@@ -188,4 +220,12 @@ export async function updateJobOrder(
   if (input.status !== undefined) payload.status = input.status;
 
   await updateDoc(docRef, payload);
+}
+
+/**
+ * Deletes a Job Order document from Firestore by ID.
+ */
+export async function deleteJobOrder(jobOrderId: string): Promise<void> {
+  const docRef = getJobOrderDocRef(jobOrderId);
+  await deleteDoc(docRef);
 }

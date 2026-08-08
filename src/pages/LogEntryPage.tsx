@@ -161,6 +161,7 @@ export function LogEntryPage() {
   const [workOrderCf, setWorkOrderCf] = useState<string>("");
   const [workOrderC, setWorkOrderC] = useState<string>("");
   const [brandName, setBrandName] = useState<string>("");
+  const [cylinderVariant, setCylinderVariant] = useState<string>("11 kg");
   const [date, setDate] = useState(todayValue());
   const [timeSlot, setTimeSlot] = useState<LegacyTimeSlot | "">("6am–8am");
   const [errors, setErrors] = useState<FormErrors>({});
@@ -173,6 +174,7 @@ export function LogEntryPage() {
     const digits = jo.workOrder.replace(/\D/g, "");
     setJoNumber(digits || jo.id);
     setBrandName(jo.brand || "");
+    setCylinderVariant(jo.cylinderSize || "11 kg");
     setWorkOrderCnf(jo.cnf ? String(jo.cnf) : "");
     setWorkOrderCf(jo.cf ? String(jo.cf) : "");
     setWorkOrderC(jo.cn ? String(jo.cn) : (jo.c ? String(jo.c) : ""));
@@ -453,7 +455,46 @@ export function LogEntryPage() {
                         <span className="text-[12px] text-[#6E6E73]">Brand Name:</span>
                         <span className="text-[13px] font-bold text-[#1D1D1F]">{brandName || "Standard"}</span>
                       </div>
-                      <div className="flex items-center justify-between pt-2 border-t border-[#E5E5EA] text-[12px]">
+                      <div className="flex flex-col gap-1.5 pt-1.5 border-t border-[#E5E5EA]">
+                        <span className="text-[12px] font-semibold text-[#6E6E73]">Breakdown by Tank Capacity:</span>
+                        {(() => {
+                          const jo = jobOrders.find((o) => o.id === selectedJoId);
+                          if (!jo) return null;
+                          const v11 = jo.variants?.size11kg;
+                          const v22 = jo.variants?.size22kg;
+                          const v50 = jo.variants?.size50kg;
+                          const hasVariants = Boolean(v11 || v22 || v50);
+
+                          if (!hasVariants) {
+                            return (
+                              <div className="text-[12px] font-medium text-[#1D1D1F]">
+                                <span className="font-bold text-[#0071E3]">11kg:</span> CNF: {workOrderCnf || 0} · CF: {workOrderCf || 0} · CN: {workOrderC || 0}
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div className="space-y-1 text-[12px]">
+                              {v11 && (Number(v11.cnf || 0) > 0 || Number(v11.cf || 0) > 0 || Number(v11.cn || 0) > 0) && (
+                                <div>
+                                  <span className="font-bold text-[#0071E3]">11kg:</span> CNF: {v11.cnf || 0} · CF: {v11.cf || 0} · CN: {v11.cn || 0}
+                                </div>
+                              )}
+                              {v22 && (Number(v22.cnf || 0) > 0 || Number(v22.cf || 0) > 0 || Number(v22.cn || 0) > 0) && (
+                                <div>
+                                  <span className="font-bold text-[#0071E3]">22kg:</span> CNF: {v22.cnf || 0} · CF: {v22.cf || 0} · CN: {v22.cn || 0}
+                                </div>
+                              )}
+                              {v50 && (Number(v50.cnf || 0) > 0 || Number(v50.cf || 0) > 0 || Number(v50.cn || 0) > 0) && (
+                                <div>
+                                  <span className="font-bold text-[#0071E3]">50kg:</span> CNF: {v50.cnf || 0} · CF: {v50.cf || 0} · CN: {v50.cn || 0}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                      <div className="flex items-center justify-between pt-1.5 border-t border-[#E5E5EA] text-[12px]">
                         <span className="text-[#6E6E73]">Quantities:</span>
                         <div className="flex items-center gap-2">
                           <span className="rounded bg-[#F5F5F7] px-2 py-0.5 text-[11px] font-semibold text-[#1D1D1F]">CNF: {workOrderCnf || 0}</span>

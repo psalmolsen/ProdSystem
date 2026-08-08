@@ -158,13 +158,17 @@ export function Dashboard() {
   // Calculate target total quantity for selected Job Order
   const targetTotal = useMemo(() => {
     if (!selectedJobOrder) return 0;
+    const size11 = Number(selectedJobOrder.size11kg || 0);
+    const size22 = Number(selectedJobOrder.size22kg || 0);
+    const size50 = Number(selectedJobOrder.size50kg || 0);
+    const variantSum = size11 + size22 + size50;
     const cnf = Number(selectedJobOrder.cnf || 0);
     const cf = Number(selectedJobOrder.cf || 0);
     const cn = Number(selectedJobOrder.cn || selectedJobOrder.c || 0);
     const othersSum = selectedJobOrder.otherItems
       ? selectedJobOrder.otherItems.reduce((acc, item) => acc + Number(item.qty || 0), 0)
       : 0;
-    return cnf + cf + cn + othersSum;
+    return variantSum > 0 ? variantSum : (cnf + cf + cn + othersSum);
   }, [selectedJobOrder]);
 
   const completionPercent = useMemo(() => {
@@ -249,8 +253,13 @@ export function Dashboard() {
             <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#D2D2D7] px-6 py-4">
               {/* Left Title */}
               <div>
-                <h2 className="text-[24px] font-black tracking-tight text-[#1D1D1F]">
-                  JO # {selectedJobOrder ? selectedJobOrder.id.replace(/^JO-/, "") : "___"}
+                <h2 className="text-[24px] font-black tracking-tight text-[#1D1D1F] flex items-center gap-2.5">
+                  <span>JO # {selectedJobOrder ? selectedJobOrder.id.replace(/^JO-/, "") : "___"}</span>
+                  {selectedJobOrder && (
+                    <span className="rounded-full bg-[#0071E3]/10 border border-[#0071E3]/20 px-3 py-0.5 text-[12px] font-bold text-[#0071E3]">
+                      {selectedJobOrder.cylinderSize || "11 kg"}
+                    </span>
+                  )}
                 </h2>
               </div>
 
@@ -370,7 +379,7 @@ export function Dashboard() {
                 ) : (
                   jobOrders.map((order) => (
                     <option key={order.id} value={order.id}>
-                      {order.id}{order.brand && order.brand !== "Standard" ? ` — ${order.brand}` : ""}
+                      {order.id}{order.brand && order.brand !== "Standard" && order.brand !== "Standard Brand" ? ` — ${order.brand}` : ""}
                     </option>
                   ))
                 )}
@@ -391,12 +400,57 @@ export function Dashboard() {
               </div>
 
               {selectedJobOrder ? (
-                <div className="text-[12px] font-medium text-[#1D1D1F] space-y-1">
-                  <p className="font-semibold text-[#1D1D1F]">
-                    CNF: {selectedJobOrder.cnf || 0} · CF: {selectedJobOrder.cf || 0} · CN: {selectedJobOrder.cn || selectedJobOrder.c || 0}
-                  </p>
+                <div className="text-[12px] font-medium text-[#1D1D1F] space-y-2">
+                  {/* Nested Breakdown per Tank Capacity */}
+                  {(() => {
+                    const v11 = selectedJobOrder.variants?.size11kg;
+                    const v22 = selectedJobOrder.variants?.size22kg;
+                    const v50 = selectedJobOrder.variants?.size50kg;
+                    const hasVariants = Boolean(v11 || v22 || v50);
+
+                    if (!hasVariants) {
+                      return (
+                        <div className="rounded-lg bg-[#F5F5F7] p-2 border border-[#E5E5EA]">
+                          <span className="font-bold text-[#0071E3] block text-[11px] mb-0.5">11 kg Variant</span>
+                          <span className="text-[12px] font-semibold text-[#1D1D1F]">
+                            CNF: {selectedJobOrder.cnf || 0} · CF: {selectedJobOrder.cf || 0} · CN: {selectedJobOrder.cn || selectedJobOrder.c || 0}
+                          </span>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="space-y-1.5">
+                        {v11 && (Number(v11.cnf || 0) > 0 || Number(v11.cf || 0) > 0 || Number(v11.cn || 0) > 0) && (
+                          <div className="rounded-lg bg-[#F5F5F7] p-2 border border-[#E5E5EA]">
+                            <span className="font-bold text-[#0071E3] block text-[11px] mb-0.5">11 kg Variant</span>
+                            <span className="text-[12px] font-semibold text-[#1D1D1F]">
+                              CNF: {v11.cnf || 0} · CF: {v11.cf || 0} · CN: {v11.cn || 0}
+                            </span>
+                          </div>
+                        )}
+                        {v22 && (Number(v22.cnf || 0) > 0 || Number(v22.cf || 0) > 0 || Number(v22.cn || 0) > 0) && (
+                          <div className="rounded-lg bg-[#F5F5F7] p-2 border border-[#E5E5EA]">
+                            <span className="font-bold text-[#0071E3] block text-[11px] mb-0.5">22 kg Variant</span>
+                            <span className="text-[12px] font-semibold text-[#1D1D1F]">
+                              CNF: {v22.cnf || 0} · CF: {v22.cf || 0} · CN: {v22.cn || 0}
+                            </span>
+                          </div>
+                        )}
+                        {v50 && (Number(v50.cnf || 0) > 0 || Number(v50.cf || 0) > 0 || Number(v50.cn || 0) > 0) && (
+                          <div className="rounded-lg bg-[#F5F5F7] p-2 border border-[#E5E5EA]">
+                            <span className="font-bold text-[#0071E3] block text-[11px] mb-0.5">50 kg Variant</span>
+                            <span className="text-[12px] font-semibold text-[#1D1D1F]">
+                              CNF: {v50.cnf || 0} · CF: {v50.cf || 0} · CN: {v50.cn || 0}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
                   {selectedJobOrder.otherItems && selectedJobOrder.otherItems.length > 0 && (
-                    <p className="text-[11px] text-[#6E6E73] truncate">
+                    <p className="text-[11px] text-[#6E6E73] truncate pt-1 border-t border-[#E5E5EA]">
                       Others: {selectedJobOrder.otherItems.map((i) => `${i.label}: ${i.qty}`).join(", ")}
                     </p>
                   )}

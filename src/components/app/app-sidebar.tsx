@@ -1,21 +1,9 @@
 import {
   LayoutDashboard,
-  ScanBarcode,
   ClipboardList,
   FileText,
-  Truck,
-  ClipboardCheck,
-  GaugeCircle,
-  Droplets,
-  PaintRoller,
-  Wrench,
   RotateCcw,
-  Undo2,
-  PackageCheck,
-  FileBarChart,
   Users,
-  Settings,
-  ChevronRight,
   LogOut,
   Tag,
 } from "lucide-react";
@@ -23,44 +11,13 @@ import logo from "@/assets/ccb-logo.png.asset.json";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 
-const groups: { label: string; items: { to: string; label: string; icon: typeof Truck; badge?: string }[] }[] = [
-
-  {
-    label: "Overview",
-    items: [
-      { to: "/",              label: "Dashboard",         icon: LayoutDashboard },
-      { to: "/brand-summary", label: "Brand Summary",     icon: Tag },
-      { to: "/job-orders",    label: "Job Orders",        icon: FileText },
-      { to: "/entry",         label: "Production Entry",  icon: ClipboardList },
-      { to: "/tracking",      label: "Cylinder Tracking", icon: ScanBarcode },
-    ],
-  },
-  {
-    label: "Production",
-    items: [
-      { to: "/receiving",   label: "Receiving",    icon: Truck },
-      { to: "/ctc1",        label: "CTC 1",        icon: ClipboardCheck },
-      { to: "/ctc2",        label: "CTC 2",        icon: GaugeCircle },
-      { to: "/hotworks",    label: "Hotworks",     icon: Wrench },
-      { to: "/painting",    label: "Painting",     icon: PaintRoller },
-      { to: "/cosmetics",   label: "Cosmetics",    icon: Droplets },
-    ],
-  },
-  {
-    label: "Exceptions",
-    items: [
-      { to: "/backjob",          label: "Backjob Management", icon: RotateCcw },
-      { to: "/rework",           label: "Rework",           icon: RotateCcw, badge: "17" },
-      { to: "/customer-returns",  label: "Customer Returns",  icon: Undo2 },
-    ],
-  },
-  {
-    label: "System",
-    items: [
-      { to: "/access-requests", label: "User Access & Accounts", icon: Users },
-      { to: "/auth", label: "Station Login UI", icon: LogOut },
-    ],
-  },
+const navItems = [
+  { to: "/",              label: "Dashboard",         icon: LayoutDashboard },
+  { to: "/brand-summary", label: "Brand Summary",     icon: Tag },
+  { to: "/job-orders",    label: "Job Orders",        icon: FileText },
+  { to: "/entry",         label: "Production Entry",  icon: ClipboardList },
+  { to: "/backjob",       label: "Backjob Management", icon: RotateCcw },
+  { to: "/access-requests", label: "User Access & Accounts", icon: Users },
 ];
 
 export function AppSidebar({ activePath }: { activePath: string }) {
@@ -82,50 +39,28 @@ export function AppSidebar({ activePath }: { activePath: string }) {
       </div>
 
       {/* Navigation list */}
-      <nav className="flex-1 overflow-y-auto p-3 space-y-6">
-        {groups.map((group) => (
-          <div key={group.label}>
-            <p className="px-3 mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6E6E73]">
-              {group.label}
-            </p>
-            <ul className="space-y-1">
-              {group.items.map((item) => {
-                  const active = activePath === item.to || (item.to === "/" && activePath === "");
-                  return (
-                    <li key={item.to}>
-                      <a
-                        href={`#${item.to}`}
-                        className={cn(
-                          "flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-[13px] font-medium transition-colors duration-200",
-                          active
-                            ? "bg-[rgba(0,113,227,0.10)] text-[#0071E3]"
-                            : "text-[#1D1D1F]/70 hover:bg-[#F5F5F7] hover:text-[#1D1D1F]",
-                        )}
-                      >
-                        <item.icon
-                          className={cn("h-[17px] w-[17px] shrink-0", active ? "text-[#0071E3]" : "text-[#6E6E73]")}
-                          strokeWidth={1.5}
-                        />
-                        <span className="truncate">{item.label}</span>
-                        {item.badge && (
-                          <span
-                            className={cn(
-                              "ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold tabular",
-                              active
-                                ? "bg-[#0071E3]/15 text-[#0071E3]"
-                                : "bg-[#F5F5F7] text-[#6E6E73]",
-                            )}
-                          >
-                            {item.badge}
-                          </span>
-                        )}
-                      </a>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-        ))}
+      <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+        {navItems.map((item) => {
+          const active = activePath === item.to || (item.to === "/" && activePath === "");
+          return (
+            <a
+              key={item.to}
+              href={`#${item.to}`}
+              className={cn(
+                "flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-[13px] font-medium transition-colors duration-200",
+                active
+                  ? "bg-[rgba(0,113,227,0.10)] text-[#0071E3]"
+                  : "text-[#1D1D1F]/70 hover:bg-[#F5F5F7] hover:text-[#1D1D1F]",
+              )}
+            >
+              <item.icon
+                className={cn("h-[17px] w-[17px] shrink-0", active ? "text-[#0071E3]" : "text-[#6E6E73]")}
+                strokeWidth={1.5}
+              />
+              <span className="truncate">{item.label}</span>
+            </a>
+          );
+        })}
       </nav>
 
       {/* User footer */}
