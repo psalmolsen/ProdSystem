@@ -88,7 +88,7 @@ export function AuthPage() {
               CCB Management System
             </h2>
             <p className="mt-3 text-[15px] leading-relaxed text-[#A1A1A6]">
-              Real-time LPG cylinder requalification and production tracking portal for 11kg, 22kg, and 50kg variants.
+              Real-time LPG cylinder requalification and production tracking.
             </p>
           </div>
 
