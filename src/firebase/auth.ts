@@ -40,13 +40,6 @@ export async function checkRedirectResult(): Promise<UserCredential | null> {
 }
 
 export async function signIn(): Promise<UserCredential | void> {
-  const isMobile = /iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent);
-
-  if (isMobile) {
-    await signInWithRedirect(auth, googleProvider);
-    return;
-  }
-
   try {
     return await signInWithPopup(auth, googleProvider);
   } catch (err: any) {

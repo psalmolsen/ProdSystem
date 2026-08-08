@@ -32,12 +32,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Process redirect result for mobile browsers returning from Google auth
-    checkRedirectResult().catch((err) => {
-      console.warn("Auth redirect result error:", err);
-    });
+    let unsub: (() => void) | undefined;
 
-    const unsubscribe = onAuthStateChanged(async (currentUser) => {
+    const init = async () => {
+      try {
+        await checkRedirectResult();
+      } catch (err) {
+        console.warn("Auth redirect result error:", err);
+      }
+
+      unsub = onAuthStateChanged(async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
         try {
@@ -63,7 +67,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       setLoading(false);
     });
-    return () => unsubscribe();
+    };
+
+    init();
+
+    return () => unsub?.();
   }, []);
 
   const signIn = async () => {
