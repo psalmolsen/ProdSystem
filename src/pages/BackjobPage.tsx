@@ -276,7 +276,7 @@ export function BackjobPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search BJ#, JO#, Brand, Reworks, or Reason..."
+                placeholder="Search JO#, Brand, Reworks, or Reason..."
                 className="h-[40px] w-full rounded-[10px] border border-[#D2D2D7] bg-[#F5F5F7] pl-10 pr-4 text-[13px] font-medium text-[#1D1D1F] outline-none focus:border-[#0071E3] focus:bg-white"
               />
             </div>
@@ -307,7 +307,6 @@ export function BackjobPage() {
             <table className="w-full text-left text-[13px]">
               <thead>
                 <tr className="border-b border-[#D2D2D7] bg-[#F5F5F7] text-[11px] font-bold uppercase tracking-[0.05em] text-[#6E6E73]">
-                  <th className="px-4 py-3 min-w-[110px]">Backjob ID</th>
                   <th className="px-4 py-3 min-w-[100px]">JO#</th>
                   <th className="px-4 py-3 min-w-[120px]">Brand Name</th>
                   <th className="px-4 py-3 min-w-[200px]">Reworks to Perform</th>
@@ -320,7 +319,7 @@ export function BackjobPage() {
               <tbody className="divide-y divide-[#D2D2D7] bg-white">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-12 text-center text-[#6E6E73]">
+                    <td colSpan={7} className="px-4 py-12 text-center text-[#6E6E73]">
                       <div className="flex items-center justify-center gap-2">
                         <RefreshCw className="h-4 w-4 animate-spin text-[#0071E3]" />
                         <span>Loading Backjobs from Cloud Firestore...</span>
@@ -329,7 +328,7 @@ export function BackjobPage() {
                   </tr>
                 ) : backjobs.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-12 text-center text-[#6E6E73]">
+                    <td colSpan={7} className="px-4 py-12 text-center text-[#6E6E73]">
                       <RotateCcw className="mx-auto h-8 w-8 text-[#A1A1A6] mb-2" />
                       <p className="font-semibold text-[#1D1D1F]">No Backjobs found</p>
                       <p className="text-[12px] mt-1">Click "+ New Backjob" to create your first entry.</p>
@@ -342,8 +341,7 @@ export function BackjobPage() {
 
                     return (
                       <tr key={bj.id} className="hover:bg-[#F5F5F7]/50 transition-colors">
-                        <td className="px-4 py-3 font-bold text-[#0071E3]">{bj.id}</td>
-                        <td className="px-4 py-3 font-semibold text-[#1D1D1F]">{bj.joNumber}</td>
+                        <td className="px-4 py-3 font-bold text-[#0071E3]">{bj.joNumber}</td>
                         <td className="px-4 py-3 font-semibold text-[#1D1D1F]">{bj.brand}</td>
                         <td className="px-4 py-3 font-medium text-[#1D1D1F]">
                           {bj.reworksToPerform}
@@ -558,7 +556,7 @@ export function BackjobPage() {
                   <Layers className="h-4 w-4" />
                 </span>
                 <h3 className="text-[17px] font-semibold text-[#1D1D1F]">
-                  Edit Backjob — {selectedBackjob.id}
+                  Edit Backjob — JO# {selectedBackjob.joNumber}
                 </h3>
               </div>
               <button
