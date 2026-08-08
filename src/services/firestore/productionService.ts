@@ -230,10 +230,9 @@ export async function updateProductionValue(
   );
 
   const docRef = getProductionDocRef(jobOrderId, dateStr);
-  const fieldPath = `${department}.${processName}.${timeSlot}`;
 
   await updateDoc(docRef, {
-    [fieldPath]: value,
+    [department]: deptObj,
     updatedAt: serverTimestamp(),
     lastUpdatedBy: operatorName,
     summary: updatedSummary,
