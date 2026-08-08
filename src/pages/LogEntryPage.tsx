@@ -392,7 +392,7 @@ export function LogEntryPage() {
         )}
 
         {/* ── Job details ──────────────────────────────────────────────────── */}
-        <Panel title="Step 2 — Job Order & Shift Details">
+        <Panel title="Job Order & Shift Details">
           <div className="grid gap-5 lg:grid-cols-2">
             {/* Sub-card 1: Job Identification & Auto-loaded Info */}
             <div className="flex flex-col justify-between rounded-[14px] border border-[#E5E5EA] bg-[#FBFBFC] p-4.5">
@@ -460,46 +460,6 @@ export function LogEntryPage() {
                           <span className="rounded bg-[#F5F5F7] px-2 py-0.5 text-[11px] font-semibold text-[#1D1D1F]">CF: {workOrderCf || 0}</span>
                           <span className="rounded bg-[#F5F5F7] px-2 py-0.5 text-[11px] font-semibold text-[#1D1D1F]">CN: {workOrderC || 0}</span>
                         </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Quick JO Clickable Pills */}
-                  {jobOrders.length > 0 && (
-                    <div>
-                      <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.05em] text-[#6E6E73]">
-                        Quick Select JO#:
-                      </p>
-                      <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto">
-                        {jobOrders.map((jo) => {
-                          const isSelected = selectedJoId === jo.id;
-                          return (
-                            <button
-                              key={jo.id}
-                              type="button"
-                              onClick={() => {
-                                selectAndConfirmJo(jo);
-                                setErrors((prev) => ({ ...prev, jobOrder: undefined }));
-                              }}
-                              className={cn(
-                                "flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[12px] font-bold transition-all cursor-pointer",
-                                isSelected
-                                  ? "border-[#0071E3] bg-[#0071E3] text-white shadow-sm"
-                                  : "border-[#D2D2D7] bg-white text-[#1D1D1F] hover:border-[#0071E3] hover:bg-[#0071E3]/5",
-                              )}
-                            >
-                              <span>{jo.id}</span>
-                              <span
-                                className={cn(
-                                  "text-[10px] font-normal",
-                                  isSelected ? "text-white/80" : "text-[#6E6E73]",
-                                )}
-                              >
-                                ({jo.brand || jo.workOrder})
-                              </span>
-                            </button>
-                          );
-                        })}
                       </div>
                     </div>
                   )}
@@ -571,16 +531,16 @@ export function LogEntryPage() {
           </div>
         </Panel>
 
-        {/* ── Single combined Panel for Step 1 (Select Department) and Step 3 (Process Log) ── */}
+        {/* ── Single combined Panel for Department & Process Log Entries ── */}
         <Panel
           title={`Department & Productivity Log (${activeDept.label})`}
           description="Select a department and enter output counts for each sub-process."
         >
           <div className="space-y-5">
-            {/* Step 1 Inner Sub-Card: Department Selection */}
+            {/* Department Selection */}
             <div className="rounded-[14px] border border-[#E5E5EA] bg-[#FBFBFC] p-4.5">
               <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#6E6E73]">
-                Step 1 — Select Department
+                Select Department
               </p>
               <div className="flex flex-wrap gap-3">
                 {DEPT_TABS.map((dept) => {
@@ -596,45 +556,28 @@ export function LogEntryPage() {
                         setSavedMessage(null);
                         setErrors({});
                       }}
-                      style={
-                        isActive
-                          ? {
-                              backgroundColor: dept.activeBg,
-                              color: dept.activeText,
-                              borderColor: dept.activeBorder,
-                            }
-                          : {}
-                      }
                       className={cn(
-                        "relative flex items-center gap-2.5 rounded-[12px] border px-4 py-3 text-[13px] font-medium transition-all duration-200 cursor-pointer",
+                        "flex items-center gap-2.5 rounded-[12px] border px-4 py-3 text-[13px] font-bold transition-all duration-200 cursor-pointer",
                         isActive
-                          ? "shadow-[0_2px_12px_rgba(0,0,0,0.10)]"
-                          : "border-[#D2D2D7] bg-white text-[#1D1D1F]/70 hover:border-[#C7C7CC] hover:bg-[#F5F5F7] hover:text-[#1D1D1F]",
+                          ? "border-[#0071E3] bg-[#0071E3] text-white shadow-[0_2px_8px_rgba(0,113,227,0.25)]"
+                          : "border-[#D2D2D7] bg-white text-[#1D1D1F] hover:border-[#0071E3]/40 hover:bg-[#F5F5F7]",
                       )}
                     >
                       <Icon
-                        className="h-[17px] w-[17px] shrink-0"
-                        strokeWidth={isActive ? 2 : 1.5}
-                        style={isActive ? { color: dept.activeText } : {}}
+                        className={cn("h-4 w-4 shrink-0", isActive ? "text-white" : "text-[#6E6E73]")}
+                        strokeWidth={isActive ? 2.2 : 1.75}
                       />
                       <span>{dept.label}</span>
-
-                      {isActive && (
-                        <span
-                          className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full border-2 border-white"
-                          style={{ backgroundColor: dept.color }}
-                        />
-                      )}
                     </button>
                   );
                 })}
               </div>
             </div>
 
-            {/* Step 3 Inner Sub-Card: Sub-Process Log Entries */}
+            {/* Sub-Process Log Entries */}
             <div className="rounded-[14px] border border-[#E5E5EA] bg-[#FBFBFC] p-4.5">
               <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#6E6E73]">
-                Step 3 — Process Log Entries ({activeDept.label})
+                Process Log Entries ({activeDept.label})
               </p>
 
               {errors.rows && (
@@ -665,23 +608,20 @@ export function LogEntryPage() {
                         >
                           <td className="px-4 py-3 font-semibold text-[#1D1D1F]">
                             <div className="flex items-center gap-2">
-                              <span
-                                className="h-2 w-2 rounded-full"
-                                style={{ backgroundColor: activeDept.color }}
-                              />
+                              <span className="h-2 w-2 rounded-full bg-[#0071E3]" />
                               <span>{row.subProcess}</span>
                               {row.subProcess === "Good" && (
-                                <span className="rounded-full bg-[#34C759]/10 px-2 py-0.5 text-[10px] font-bold text-[#34C759]">
+                                <span className="rounded-full bg-[#F5F5F7] px-2 py-0.5 text-[10px] font-bold text-[#6E6E73] border border-[#D2D2D7]">
                                   Passed Good
                                 </span>
                               )}
                               {row.subProcess === "Buffer" && (
-                                <span className="rounded-full bg-[#0071E3]/10 px-2 py-0.5 text-[10px] font-bold text-[#0071E3]">
+                                <span className="rounded-full bg-[#F5F5F7] px-2 py-0.5 text-[10px] font-bold text-[#6E6E73] border border-[#D2D2D7]">
                                   Buffer Tanks
                                 </span>
                               )}
                               {row.subProcess === "Reject" && (
-                                <span className="rounded-full bg-[#FF3B30]/10 px-2 py-0.5 text-[10px] font-bold text-[#FF3B30]">
+                                <span className="rounded-full bg-[#F5F5F7] px-2 py-0.5 text-[10px] font-bold text-[#6E6E73] border border-[#D2D2D7]">
                                   Reject Tanks
                                 </span>
                               )}
