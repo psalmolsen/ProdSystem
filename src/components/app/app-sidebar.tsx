@@ -6,6 +6,7 @@ import {
   Users,
   LogOut,
   Tag,
+  X,
 } from "lucide-react";
 import logo from "@/assets/ccb-logo.png";
 import { cn } from "@/lib/utils";
@@ -20,78 +21,114 @@ const navItems = [
   { to: "/access-requests", label: "User Access & Accounts", icon: Users },
 ];
 
-export function AppSidebar({ activePath }: { activePath: string }) {
+export function AppSidebar({
+  activePath,
+  mobileOpen = false,
+  onCloseMobile,
+}: {
+  activePath: string;
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
+}) {
   const { user, role, signOut } = useAuth();
 
   return (
-    <aside className="flex h-full w-[240px] flex-col shrink-0 border-r border-[#D2D2D7] bg-white text-[#1D1D1F]">
-      {/* Brand header */}
-      <div className="flex h-[72px] items-center gap-3 border-b border-[#D2D2D7] px-6">
-        <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[10px] bg-[#0071E3]/10">
-          <img src={logo} alt="CCB Logo" className="h-[28px] w-[28px] object-contain" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[14px] font-semibold tracking-[-0.01em] text-[#1D1D1F]">
-            CCB Production
-          </p>
-          <p className="truncate text-[11px] text-[#6E6E73]">Management System</p>
-        </div>
-      </div>
+    <>
+      {/* Mobile Drawer Backdrop */}
+      {mobileOpen && (
+        <div
+          onClick={onCloseMobile}
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs lg:hidden transition-opacity cursor-pointer"
+        />
+      )}
 
-      {/* Navigation list */}
-      <nav className="flex-1 overflow-y-auto p-3 space-y-1">
-        {navItems.map((item) => {
-          const active = activePath === item.to || (item.to === "/" && activePath === "");
-          return (
-            <a
-              key={item.to}
-              href={`#${item.to}`}
-              className={cn(
-                "flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-[13px] font-medium transition-colors duration-200",
-                active
-                  ? "bg-[rgba(0,113,227,0.10)] text-[#0071E3]"
-                  : "text-[#1D1D1F]/70 hover:bg-[#F5F5F7] hover:text-[#1D1D1F]",
-              )}
-            >
-              <item.icon
-                className={cn("h-[17px] w-[17px] shrink-0", active ? "text-[#0071E3]" : "text-[#6E6E73]")}
-                strokeWidth={1.5}
-              />
-              <span className="truncate">{item.label}</span>
-            </a>
-          );
-        })}
-      </nav>
+      {/* Sidebar Content (Fixed on desktop, sliding drawer on mobile) */}
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 flex h-full w-[260px] flex-col shrink-0 border-r border-[#D2D2D7] bg-white text-[#1D1D1F] transition-transform duration-300 ease-in-out lg:static lg:w-[240px] lg:translate-x-0",
+          mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full",
+        )}
+      >
+        {/* Brand header */}
+        <div className="flex h-[72px] items-center justify-between border-b border-[#D2D2D7] px-5">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[10px] bg-[#0071E3]/10">
+              <img src={logo} alt="CCB Logo" className="h-[28px] w-[28px] object-contain" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[14px] font-semibold tracking-[-0.01em] text-[#1D1D1F]">
+                CCB Production
+              </p>
+              <p className="truncate text-[11px] text-[#6E6E73]">Management System</p>
+            </div>
+          </div>
 
-      {/* User footer */}
-      <div className="border-t border-[#D2D2D7] p-3">
-        <div className="flex w-full items-center gap-3 rounded-[10px] px-2.5 py-2.5 text-left">
-          {user?.photoURL ? (
-            <img src={user.photoURL} alt={user.displayName || "User"} className="h-8 w-8 rounded-full object-cover shrink-0" />
-          ) : (
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#0071E3] text-[11px] font-semibold text-white">
-              {(user?.displayName || user?.email || "U").substring(0, 2).toUpperCase()}
-            </span>
-          )}
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-[13px] font-medium text-[#1D1D1F] tracking-[-0.01em]">
-              {user?.displayName || "Authenticated User"}
-            </span>
-            <span className="block truncate text-[11px] text-[#6E6E73]">
-              {user?.email || "Signed in"}
-            </span>
-          </span>
+          {/* Close button for mobile drawer */}
           <button
             type="button"
-            onClick={() => signOut()}
-            title="Sign out"
-            className="grid h-7 w-7 place-items-center rounded-lg text-[#6E6E73] hover:bg-[#E5E5EA] hover:text-[#FF3B30] transition-colors cursor-pointer"
+            onClick={onCloseMobile}
+            className="grid h-8 w-8 place-items-center rounded-lg text-[#6E6E73] hover:bg-[#F5F5F7] lg:hidden cursor-pointer"
           >
-            <LogOut className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+            <X className="h-5 w-5" />
           </button>
         </div>
-      </div>
-    </aside>
+
+        {/* Navigation list */}
+        <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+          {navItems.map((item) => {
+            const active = activePath === item.to || (item.to === "/" && activePath === "");
+            return (
+              <a
+                key={item.to}
+                href={`#${item.to}`}
+                onClick={onCloseMobile}
+                className={cn(
+                  "flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-[13px] font-medium transition-colors duration-200",
+                  active
+                    ? "bg-[rgba(0,113,227,0.10)] text-[#0071E3] font-semibold"
+                    : "text-[#1D1D1F]/70 hover:bg-[#F5F5F7] hover:text-[#1D1D1F]",
+                )}
+              >
+                <item.icon
+                  className={cn("h-[17px] w-[17px] shrink-0", active ? "text-[#0071E3]" : "text-[#6E6E73]")}
+                  strokeWidth={1.5}
+                />
+                <span className="truncate">{item.label}</span>
+              </a>
+            );
+          })}
+        </nav>
+
+        {/* User footer */}
+        <div className="border-t border-[#D2D2D7] p-3">
+          <div className="flex w-full items-center gap-3 rounded-[10px] px-2.5 py-2.5 text-left">
+            {user?.photoURL ? (
+              <img src={user.photoURL} alt={user.displayName || "User"} className="h-8 w-8 rounded-full object-cover shrink-0" />
+            ) : (
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#0071E3] text-[11px] font-semibold text-white">
+                {(user?.displayName || user?.email || "U").substring(0, 2).toUpperCase()}
+              </span>
+            )}
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[13px] font-medium text-[#1D1D1F] tracking-[-0.01em]">
+                {user?.displayName || "Authenticated User"}
+              </span>
+              <span className="block truncate text-[11px] text-[#6E6E73]">
+                {user?.email || "Signed in"}
+              </span>
+            </span>
+            <button
+              type="button"
+              onClick={() => signOut()}
+              title="Sign out"
+              className="grid h-7 w-7 place-items-center rounded-lg text-[#6E6E73] hover:bg-[#E5E5EA] hover:text-[#FF3B30] transition-colors cursor-pointer"
+            >
+              <LogOut className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+            </button>
+          </div>
+        </div>
+      </aside>
+    </>
   );
 }
 

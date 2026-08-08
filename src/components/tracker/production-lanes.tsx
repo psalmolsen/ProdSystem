@@ -256,8 +256,8 @@ export function ProductionLanes({
   const goodSelected = selected?.key === goodKey;
 
   return (
-    <div className="w-full overflow-hidden">
-      <div className="w-full px-1 sm:px-2">
+    <div className="w-full overflow-x-auto pb-2 scrollbar-thin">
+      <div className="min-w-[620px] lg:min-w-0 w-full px-1 sm:px-2">
         <div className="space-y-2.5">
           {STATIONS.map((station, i) => (
             <StationRow

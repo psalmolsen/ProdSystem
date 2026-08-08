@@ -576,7 +576,7 @@ export function JobOrdersPage() {
       {/* ── Create Modal ────────────────────────────────────────────────────────── */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="w-full max-w-lg rounded-[16px] bg-white p-6 shadow-2xl border border-[#D2D2D7] my-8">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-[16px] bg-white p-5 sm:p-6 shadow-2xl border border-[#D2D2D7] my-8">
             <div className="flex items-center justify-between border-b border-[#D2D2D7] pb-4">
               <div className="flex items-center gap-2">
                 <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#0071E3]/10 text-[#0071E3]">
@@ -812,7 +812,7 @@ export function JobOrdersPage() {
       {/* ── Edit Modal ──────────────────────────────────────────────────────────── */}
       {isEditModalOpen && editingJobOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="w-full max-w-lg rounded-[16px] bg-white p-6 shadow-2xl border border-[#D2D2D7] my-8">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-[16px] bg-white p-5 sm:p-6 shadow-2xl border border-[#D2D2D7] my-8">
             <div className="flex items-center justify-between border-b border-[#D2D2D7] pb-4">
               <h3 className="text-[17px] font-semibold text-[#1D1D1F]">
                 Edit Job Order ({editingJobOrder.id})

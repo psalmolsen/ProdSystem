@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { Menu } from "lucide-react";
+import logo from "@/assets/ccb-logo.png";
 import { AppSidebar } from "@/components/app/app-sidebar";
 import { Dashboard } from "@/pages/Dashboard";
 import { DeptEntryPage } from "@/pages/DeptEntryPage";
@@ -35,6 +37,12 @@ function useHashRoute() {
 export default function App() {
   const { user, isApproved, role, loading } = useAuth();
   const hash = useHashRoute();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  // Close mobile navigation drawer on route change
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [hash]);
 
   // Show loading indicator while checking auth state & user record
   if (loading) {
@@ -97,8 +105,35 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden">
-      <AppSidebar activePath={activePath} />
+    <div className="flex h-screen w-screen overflow-hidden flex-col lg:flex-row bg-[#F5F5F7]">
+      {/* Mobile Top Navigation Header */}
+      <header className="flex h-14 w-full items-center justify-between border-b border-[#D2D2D7] bg-white px-4 shrink-0 lg:hidden z-30">
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setMobileNavOpen(true)}
+            className="grid h-9 w-9 place-items-center rounded-lg text-[#1D1D1F] hover:bg-[#F5F5F7] transition-colors cursor-pointer"
+            aria-label="Open Navigation Menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <div className="flex items-center gap-2">
+            <span className="grid h-7 w-7 place-items-center rounded-md bg-[#0071E3]/10">
+              <img src={logo} alt="CCB Logo" className="h-5 w-5 object-contain" />
+            </span>
+            <span className="text-[14px] font-bold text-[#1D1D1F] tracking-tight">CCB Management System</span>
+          </div>
+        </div>
+      </header>
+
+      {/* App Sidebar Component */}
+      <AppSidebar
+        activePath={activePath}
+        mobileOpen={mobileNavOpen}
+        onCloseMobile={() => setMobileNavOpen(false)}
+      />
+
+      {/* Main Workspace Area */}
       <main className="flex flex-1 flex-col overflow-y-auto bg-[#F5F5F7]">
         {page}
       </main>
