@@ -4,6 +4,7 @@ import {
   signIn as authSignIn,
   signOut as authSignOut,
   onAuthStateChanged,
+  checkRedirectResult,
 } from "@/firebase/auth";
 import { createAccessRequest } from "@/services/firestore/accessRequestService";
 import { getCurrentUserRole } from "@/services/firestore/userService";
@@ -31,6 +32,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Process redirect result for mobile browsers returning from Google auth
+    checkRedirectResult().catch((err) => {
+      console.warn("Auth redirect result error:", err);
+    });
+
     const unsubscribe = onAuthStateChanged(async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {

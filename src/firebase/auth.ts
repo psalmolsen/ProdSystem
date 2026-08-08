@@ -2,6 +2,12 @@ import {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  setPersistence,
+  indexedDBLocalPersistence,
+  browserLocalPersistence,
+  inMemoryPersistence,
   signOut as firebaseSignOut,
   onAuthStateChanged as firebaseOnAuthStateChanged,
   type User,
@@ -11,10 +17,42 @@ import {
 import { app } from "./firebase";
 
 export const auth = getAuth(app);
-const googleProvider = new GoogleAuthProvider();
 
-export async function signIn(): Promise<UserCredential> {
-  return await signInWithPopup(auth, googleProvider);
+// Safe persistence fallback for mobile devices and restricted browsers
+setPersistence(auth, [
+  indexedDBLocalPersistence,
+  browserLocalPersistence,
+  inMemoryPersistence,
+]).catch((err) => {
+  console.warn("Failed to set auth persistence:", err);
+});
+
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: "select_account" });
+
+export async function checkRedirectResult(): Promise<UserCredential | null> {
+  try {
+    return await getRedirectResult(auth);
+  } catch (err) {
+    console.error("Error handling auth redirect result:", err);
+    return null;
+  }
+}
+
+export async function signIn(): Promise<UserCredential | void> {
+  const isMobile = /iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent);
+
+  if (isMobile) {
+    await signInWithRedirect(auth, googleProvider);
+    return;
+  }
+
+  try {
+    return await signInWithPopup(auth, googleProvider);
+  } catch (err: any) {
+    console.warn("Popup sign-in failed, attempting redirect fallback:", err);
+    await signInWithRedirect(auth, googleProvider);
+  }
 }
 
 export async function signOut(): Promise<void> {
