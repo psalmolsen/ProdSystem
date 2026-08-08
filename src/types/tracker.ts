@@ -1,6 +1,6 @@
 import type { TimeSlot } from "@/config/stations";
 
-export type StationId = "CTC1" | "CTC2" | "Hotworks" | "Painting" | "Cosmetics";
+export type StationId = "CTC1" | "CTC2" | "Hotworks" | "Painting" | "Cosmetics" | "Others";
 
 export interface StationConfig {
   id: StationId;

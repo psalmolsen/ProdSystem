@@ -8,6 +8,7 @@ import {
   Wrench,
   PaintRoller,
   Droplets,
+  Layers,
   RefreshCw,
   AlertCircle,
 } from "lucide-react";
@@ -82,6 +83,16 @@ const DEPT_TABS: {
     activeBg: "rgba(255,55,95,0.10)",
     activeText: "#FF375F",
     activeBorder: "#FF375F",
+  },
+  {
+    id: "Others",
+    label: "Others",
+    short: "OTH",
+    icon: Layers,
+    color: "#8E8E93",
+    activeBg: "rgba(142,142,147,0.10)",
+    activeText: "#8E8E93",
+    activeBorder: "#8E8E93",
   },
 ];
 
@@ -226,8 +237,10 @@ export function LogEntryPage() {
   // Process rows per department
   const [allDeptRows, setAllDeptRows] = useState<Record<StationId, ProcessRow[]>>(() => {
     const initial: Partial<Record<StationId, ProcessRow[]>> = {};
-    for (const station of STATIONS) {
-      initial[station.id] = station.subProcesses.map((sp) => ({
+    for (const tab of DEPT_TABS) {
+      const station = STATIONS.find((s) => s.id === tab.id);
+      const subProcs = tab.id === "Others" ? ["Buffer", "Reject"] : (station?.subProcesses || []);
+      initial[tab.id] = subProcs.map((sp) => ({
         subProcess: sp,
         output: "",
         personnel: "",
@@ -245,8 +258,8 @@ export function LogEntryPage() {
 
   const totalFilledCount = useMemo(() => {
     let count = 0;
-    for (const station of STATIONS) {
-      const deptRows = allDeptRows[station.id] || [];
+    for (const tab of DEPT_TABS) {
+      const deptRows = allDeptRows[tab.id] || [];
       count += deptRows.filter(isRowFilled).length;
     }
     return count;
@@ -288,10 +301,10 @@ export function LogEntryPage() {
     let totalFilled = 0;
     const filledByDept: Record<StationId, ProcessRow[]> = {} as Record<StationId, ProcessRow[]>;
 
-    for (const station of STATIONS) {
-      const deptRows = allDeptRows[station.id] || [];
+    for (const tab of DEPT_TABS) {
+      const deptRows = allDeptRows[tab.id] || [];
       const filled = deptRows.filter(isRowFilled);
-      filledByDept[station.id] = filled;
+      filledByDept[tab.id] = filled;
       totalFilled += filled.length;
     }
 
@@ -319,16 +332,16 @@ export function LogEntryPage() {
       // 2. Save filled entries to Firestore under jobOrders/{joId}/production/{date}
       const engineTimeSlot = mapTimeSlotToEngine(timeSlot as LegacyTimeSlot);
 
-      for (const station of STATIONS) {
-        const filled = filledByDept[station.id] || [];
+      for (const tab of DEPT_TABS) {
+        const filled = filledByDept[tab.id] || [];
         for (const row of filled) {
           const parsedOut = Math.max(0, Math.round(Number(row.output) || 0));
-          const mappedProcess = mapSubProcessToEngine(station.id, row.subProcess);
+          const mappedProcess = mapSubProcessToEngine(tab.id, row.subProcess);
 
           await updateProductionValue({
             jobOrderId: targetJoId,
             dateStr: date,
-            department: station.id as DepartmentName,
+            department: tab.id as DepartmentName,
             processName: mappedProcess,
             timeSlot: engineTimeSlot,
             value: parsedOut,
@@ -423,7 +436,7 @@ export function LogEntryPage() {
                         </option>
                         {jobOrders.map((jo) => (
                           <option key={jo.id} value={jo.id}>
-                            {jo.id} — {jo.brand || "Standard Brand"} ({jo.workOrder})
+                            {jo.id}{jo.brand && jo.brand !== "Standard" && jo.brand !== "Standard Brand" ? ` — ${jo.brand}` : ""}
                           </option>
                         ))}
                       </select>

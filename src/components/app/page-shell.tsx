@@ -15,8 +15,8 @@ export function PageShell({
   return (
     <>
       <AppHeader title={title} breadcrumb={breadcrumb} action={action} />
-      {/* Max 1200px, generous gutters per design spec */}
-      <div className="mx-auto w-full max-w-[1200px] px-6 py-8">{children}</div>
+      {/* Max 1680px to utilize widescreen desktop space */}
+      <div className="mx-auto w-full max-w-[1680px] px-4 sm:px-6 py-6">{children}</div>
     </>
   );
 }

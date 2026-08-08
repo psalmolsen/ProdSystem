@@ -17,11 +17,11 @@ const primaryMix = (pct: number, base: string): string =>
 
 const connectorColor = (intensity: number, active: boolean): string =>
   active
-    ? primaryMix(Math.round(30 + 70 * intensity), "var(--color-border)")
-    : "var(--color-border)";
+    ? "rgba(0, 113, 227, 0.35)"
+    : "rgba(0, 113, 227, 0.20)";
 
 const connectorThickness = (intensity: number, active: boolean): number =>
-  active ? 2 + 5 * intensity : 2;
+  active ? 3.5 + 3.5 * intensity : 3;
 
 function FlowNode({
   label,
@@ -29,7 +29,6 @@ function FlowNode({
   intensity,
   selected,
   bottleneck,
-  isFinalStep,
   onClick,
 }: {
   label: string;
@@ -37,7 +36,6 @@ function FlowNode({
   intensity: number;
   selected: boolean;
   bottleneck: boolean;
-  isFinalStep?: boolean;
   onClick: () => void;
 }) {
   const empty = total <= 0;
@@ -46,36 +44,25 @@ function FlowNode({
       type="button"
       onClick={onClick}
       aria-pressed={selected}
-      title={`${label} \u00b7 ${total} units`}
+      title={`${label} \u00b7 ${total} cyl`}
       className={cn(
-        "relative flex min-h-[76px] min-w-0 flex-1 flex-col justify-between gap-2 overflow-hidden rounded-[12px] border px-3 py-3 text-left shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_4px_24px_rgba(0,0,0,0.08)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0071E3] focus-visible:ring-offset-1",
-        isFinalStep ? "bg-[rgba(52,199,89,0.08)] border-[rgba(52,199,89,0.30)]" : "bg-[rgba(0,113,227,0.06)] border-[rgba(0,113,227,0.16)]",
+        "relative flex min-h-[72px] min-w-0 flex-1 flex-col justify-between gap-1 overflow-hidden rounded-[10px] border border-[rgba(0,113,227,0.16)] bg-[rgba(0,113,227,0.06)] px-2 py-2 text-left shadow-[0_2px_6px_rgba(0,0,0,0.04)] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0071E3] focus-visible:ring-offset-1",
         selected && "border-[#0071E3] ring-2 ring-[rgba(0,113,227,0.25)]",
         bottleneck && !selected && "trace-overload",
       )}
     >
-      <span className="flex min-w-0 items-start justify-between gap-1.5">
-        <span className="min-w-0 truncate text-[12px] font-medium leading-tight text-[#1D1D1F]">
+      <span className="flex min-w-0 items-start justify-between gap-0.5">
+        <span className="min-w-0 text-[10px] sm:text-[11px] font-semibold leading-tight text-[#1D1D1F] break-words line-clamp-2">
           {label}
         </span>
         {bottleneck && (
           <AlertTriangle
-            className="h-4 w-4 shrink-0 text-[#ff9f0a]"
+            className="h-3.5 w-3.5 shrink-0 text-[#ff9f0a]"
             strokeWidth={1.5}
           />
         )}
-        {isFinalStep && (
-          <span className="rounded-full bg-[#34C759] px-1.5 py-0.5 text-[9px] font-bold text-white uppercase tracking-wider">
-            GOOD
-          </span>
-        )}
       </span>
-      <span
-        className={cn(
-          "text-[22px] font-semibold tabular leading-none tracking-[-0.02em] xl:text-[24px]",
-          isFinalStep ? "text-[#28CD41]" : "text-[#1D1D1F]",
-        )}
-      >
+      <span className="text-[18px] sm:text-[20px] font-bold tabular leading-none tracking-[-0.02em] text-[#1D1D1F] xl:text-[22px]">
         {empty ? "\u2014" : total}
       </span>
     </button>
@@ -92,22 +79,23 @@ function HorizontalConnector({
   direction: Direction;
 }) {
   return (
-    <span aria-hidden="true" className="flex w-6 shrink-0 items-center self-center xl:w-7">
+    <span aria-hidden="true" className="flex w-2 shrink-0 items-center self-center sm:w-2.5 md:w-3.5 xl:w-4.5">
       <span
-        className="relative w-full overflow-hidden rounded-full"
+        className="relative w-full overflow-hidden rounded-full shadow-[0_0_6px_rgba(0,113,227,0.30)]"
         style={{
           height: connectorThickness(intensity, active),
           backgroundColor: connectorColor(intensity, active),
         }}
       >
-        {active && (
-          <span
-            className="flow-glow"
-            style={{
-              animationName: direction === "ltr" ? "flow-glow-ltr" : "flow-glow-rtl",
-            }}
-          />
-        )}
+        <span
+          className="flow-glow"
+          style={{
+            animationName: direction === "ltr" ? "flow-glow-ltr" : "flow-glow-rtl",
+            background: "linear-gradient(90deg, transparent 0%, #0071E3 35%, #FFFFFF 50%, #0071E3 65%, transparent 100%)",
+            filter: "drop-shadow(0 0 4px #0071E3)",
+            opacity: active ? 1 : 0.85,
+          }}
+        />
       </span>
     </span>
   );
@@ -126,42 +114,42 @@ function VerticalConnector({
     <div
       aria-hidden="true"
       className={cn(
-        "flex h-[66px] pt-[32px]",
-        side === "right" ? "pr-8" : "pl-8",
+        "flex h-[48px] pt-[20px]",
+        side === "right" ? "pr-4 sm:pr-6" : "pl-4 sm:pl-6",
       )}
       style={{ justifyContent: side === "right" ? "flex-end" : "flex-start" }}
     >
       <span
-        className="relative overflow-hidden rounded-full"
+        className="relative overflow-hidden rounded-full shadow-[0_0_6px_rgba(0,113,227,0.30)]"
         style={{
           width: connectorThickness(intensity, active),
-          height: 40,
+          height: 28,
           backgroundColor: connectorColor(intensity, active),
         }}
       >
-        {active && (
-          <span
-            className="flow-glow"
-            style={{
-              animationName: "flow-glow-y",
-              background:
-                "linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.7), transparent)",
-              width: "100%",
-              height: "50%",
-            }}
-          />
-        )}
+        <span
+          className="flow-glow"
+          style={{
+            animationName: "flow-glow-y",
+            background: "linear-gradient(180deg, transparent 0%, #0071E3 35%, #FFFFFF 50%, #0071E3 65%, transparent 100%)",
+            filter: "drop-shadow(0 0 4px #0071E3)",
+            width: "100%",
+            height: "75%",
+            opacity: active ? 1 : 0.85,
+          }}
+        />
       </span>
     </div>
   );
 }
 
 const STATION_LABELS: Record<StationId, string> = {
-  CTC1: "CTC 1 · Testing & Cleaning",
-  CTC2: "CTC 2 · Valve Assembly & Pressure",
-  Hotworks: "Hotworks · Welding & Refurbish",
-  Painting: "Painting · Shotblast & Coating",
-  Cosmetics: "Cosmetics · Inspection & Weighing",
+  CTC1: "CTC 1",
+  CTC2: "CTC 2",
+  Hotworks: "Hotworks",
+  Painting: "Painting",
+  Cosmetics: "Cosmetics",
+  Others: "Others",
 };
 
 function StationRow({
@@ -183,8 +171,10 @@ function StationRow({
   selected: StepSelection | null;
   onSelectStep: (selection: StepSelection) => void;
 }) {
-  // Exclude "Good" from the Cosmetics line so it can be rendered on its own independent line
-  const subProcesses = station.subProcesses.filter((sp) => sp !== "Good");
+  // Exclude "Good", "Buffer", "Reject" from Cosmetics lane (Good is rendered on 6th line, Buffer/Reject in KPI sidebar & Others)
+  const subProcesses = station.subProcesses.filter(
+    (sp) => sp !== "Good" && sp !== "Buffer" && sp !== "Reject"
+  );
   const display =
     station.direction === "rtl" ? [...subProcesses].reverse() : subProcesses;
   const nodeTotals = display.map((sp) => totals[stepKey(station.id, sp)] ?? 0);
@@ -198,20 +188,17 @@ function StationRow({
 
   return (
     <div>
-      <div className="mb-2.5 flex items-center justify-center gap-2">
-        <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[rgba(0,113,227,0.10)] px-1.5 text-[11px] font-bold tabular text-[#0071E3]">
-          {String(index + 1).padStart(2, "0")}
-        </span>
+      <div className="mb-2 flex items-center justify-center gap-1.5">
         <h3 className="text-[12px] font-bold tracking-tight text-[#1D1D1F] uppercase">
           {STATION_LABELS[station.id] || station.id}
         </h3>
         <DirectionIcon
-          className="h-4 w-4 text-[#0071E3]/60"
+          className="h-3.5 w-3.5 text-[#0071E3]/60"
           strokeWidth={1.75}
         />
       </div>
 
-      <div className="flex items-stretch gap-2 xl:gap-2.5">
+      <div className="flex items-stretch gap-1 sm:gap-1.5 md:gap-2">
         {display.map((subProcess, j) => {
           const key = stepKey(station.id, subProcess);
           const total = nodeTotals[j];
@@ -239,12 +226,14 @@ function StationRow({
         })}
       </div>
 
-      {/* Render vertical connector to the next station or to the independent GOOD line */}
-      <VerticalConnector
-        intensity={exitIntensity}
-        active={exitTotal > 0}
-        side={exitSide}
-      />
+      {/* Render vertical connector to the next station (omit after final station Cosmetics) */}
+      {!isLast && (
+        <VerticalConnector
+          intensity={exitIntensity}
+          active={exitTotal > 0}
+          side={exitSide}
+        />
+      )}
     </div>
   );
 }
@@ -267,8 +256,8 @@ export function ProductionLanes({
   const goodSelected = selected?.key === goodKey;
 
   return (
-    <div className="-mx-1 overflow-x-auto px-1 pb-1">
-      <div className="min-w-[600px] px-6 xl:px-12">
+    <div className="w-full overflow-hidden">
+      <div className="w-full px-1 sm:px-2">
         <div className="space-y-2.5">
           {STATIONS.map((station, i) => (
             <StationRow
@@ -286,11 +275,10 @@ export function ProductionLanes({
 
           {/* ── Independent 6th Line: GOOD ──────────────────────────────────── */}
           <div className="mt-1">
-            <div className="mb-2 flex items-center justify-center gap-2">
-              <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[rgba(52,199,89,0.15)] px-1 text-[10px] font-bold tabular text-[#34C759]">
-                06
-              </span>
-              <h3 className="eyebrow text-[#34C759]">GOOD</h3>
+            <div className="mb-2 flex items-center justify-center gap-1.5">
+              <h3 className="text-[12px] font-bold tracking-tight text-[#1D1D1F] uppercase">
+                GOOD
+              </h3>
             </div>
 
             <div className="flex justify-center">
@@ -305,26 +293,22 @@ export function ProductionLanes({
                 }
                 aria-pressed={goodSelected}
                 className={cn(
-                  "relative flex w-[240px] min-h-[80px] flex-col justify-between rounded-[14px] border border-[rgba(52,199,89,0.35)] bg-[rgba(52,199,89,0.08)] p-3.5 text-left shadow-[0_4px_16px_rgba(52,199,89,0.10)] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_6px_24px_rgba(52,199,89,0.18)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#34C759]",
-                  goodSelected && "border-[#34C759] ring-2 ring-[rgba(52,199,89,0.30)]",
+                  "relative flex w-[240px] min-h-[72px] flex-col justify-between rounded-[10px] border border-[rgba(0,113,227,0.16)] bg-[rgba(0,113,227,0.06)] p-3 text-left shadow-[0_2px_6px_rgba(0,0,0,0.04)] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0071E3]",
+                  goodSelected && "border-[#0071E3] ring-2 ring-[rgba(0,113,227,0.25)]",
                 )}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-[13px] font-bold text-[#1D1D1F]">Good Products</span>
-                  <span className="rounded-full bg-[#34C759] px-2 py-0.5 text-[9px] font-extrabold text-white uppercase tracking-wider">
-                    COMPLETED
-                  </span>
+                  <span className="text-[12px] font-bold text-[#1D1D1F]">Good Products</span>
                 </div>
-                <div className="mt-2 flex items-baseline justify-between">
+                <div className="mt-1.5 flex items-baseline justify-between">
                   <span className="text-[11px] font-medium text-[#6E6E73]">Total Passed</span>
-                  <span className="text-[26px] font-bold tabular leading-none text-[#34C759]">
+                  <span className="text-[20px] font-bold tabular leading-none text-[#1D1D1F]">
                     {goodTotal <= 0 ? "\u2014" : goodTotal}
                   </span>
                 </div>
               </button>
             </div>
           </div>
-
         </div>
       </div>
     </div>

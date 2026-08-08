@@ -24,7 +24,6 @@ function Stat({ label, value }: { label: string; value: number }) {
 }
 
 const SHIFT_OPTIONS = [
-  { value: "All", label: "All Shift Slots" },
   { value: "6-8", label: "6:00 AM – 8:00 AM" },
   { value: "8-10", label: "8:00 AM – 10:00 AM" },
   { value: "11-1", label: "11:00 AM – 1:00 PM" },
@@ -41,7 +40,7 @@ export function Dashboard() {
 
   // Date and Shift Slot Filter state
   const [filterDate, setFilterDate] = useState<string>(todayIsoDate());
-  const [filterSlot, setFilterSlot] = useState<string>("All");
+  const [filterSlot, setFilterSlot] = useState<string>("6-8");
 
   const [selectedStep, setSelectedStep] = useState<StepSelection | null>(null);
   const [showNewOrder, setShowNewOrder] = useState(false);
@@ -188,9 +187,12 @@ export function Dashboard() {
 
   const handleNewOrder = async (workOrderNumber: string, brandName: string) => {
     try {
+      const rawJo = workOrderNumber.trim();
+      const cleanJoNum = rawJo.toUpperCase().replace(/^(JO|WO)-?/, "");
       const created = await createJobOrder({
-        workOrder: workOrderNumber,
-        brand: brandName,
+        joNumber: cleanJoNum || rawJo,
+        workOrder: `WO-${cleanJoNum || rawJo}`,
+        brand: brandName.trim() || "Standard",
         status: "Active",
       });
       setShowNewOrder(false);
@@ -216,288 +218,253 @@ export function Dashboard() {
 
   return (
     <PageShell title="Production Monitoring Dashboard" breadcrumb={["CCB System", "Live Tracking", "Dashboard"]}>
-      {/* ── Top Executive KPI Header (4 Stat Cards Grid) ────────────────────────── */}
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {/* Card 1: Active Job Order Info & Selector */}
-        <div className="flex flex-col justify-between rounded-[16px] border border-[#D2D2D7] bg-white p-5 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#6E6E73]">
-                Active Job Order
-              </span>
-              {jobOrders.length > 0 && (
-                <div className="flex items-center gap-1">
-                  <span className="text-[11px] font-semibold text-[#6E6E73]">
-                    {currentJoIndex >= 0 ? currentJoIndex + 1 : 0} / {jobOrders.length}
-                  </span>
+      {/* ── Dashboard Widescreen Layout: Visual JO Flow (Left 75%) + 4 KPI Cards (Right 25%) ── */}
+      <div className="mt-4 grid grid-cols-1 gap-6 items-start lg:grid-cols-12">
+        {/* ── Left Main Column: Visual JO Flow Canvas (Generous Wide Size) ─────────── */}
+        <div className="space-y-4 lg:col-span-8 xl:col-span-9">
+          {showNewOrder && (
+            <section className="rounded-[16px] border border-[#D2D2D7] bg-white p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
+              <NewJobOrderForm
+                onSubmit={handleNewOrder}
+                onCancel={() => setShowNewOrder(false)}
+              />
+            </section>
+          )}
+
+          {/* Overload banner */}
+          {overload && (
+            <div className="flex items-center gap-2.5 rounded-[12px] border border-[#ff9f0a]/30 bg-[#ff9f0a]/08 px-4 py-3">
+              <Zap className="h-4 w-4 shrink-0 text-[#ff9f0a]" fill="currentColor" />
+              <p className="text-[13px] text-[#1D1D1F]">
+                Busiest step:{" "}
+                <span className="font-semibold">
+                  {overload.station} / {overload.subProcess}
+                </span>
+                <span className="text-[#6E6E73]"> ({overload.total} cyl)</span>
+              </p>
+            </div>
+          )}
+
+          <section className="w-full rounded-[16px] border border-[#D2D2D7] bg-white shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
+            <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#D2D2D7] px-6 py-4">
+              {/* Left Title */}
+              <div>
+                <h2 className="text-[24px] font-black tracking-tight text-[#1D1D1F]">
+                  JO # {selectedJobOrder ? selectedJobOrder.id.replace(/^JO-/, "") : "___"}
+                </h2>
+              </div>
+
+              {/* Right Header Filter Toolbar: < Date > & Shift Dropdown */}
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Date Navigator Controls: < date > */}
+                <div className="flex items-center gap-1 rounded-[12px] border border-[#D2D2D7] bg-[#F5F5F7] p-1">
                   <button
                     type="button"
-                    onClick={handlePrevJobOrder}
-                    title="Previous Job Order"
-                    className="grid h-5 w-5 place-items-center rounded border border-[#D2D2D7] bg-[#F5F5F7] hover:bg-white cursor-pointer"
+                    onClick={handlePrevDate}
+                    title="Previous Day"
+                    className="grid h-8 w-8 place-items-center rounded-[8px] hover:bg-white hover:text-[#0071E3] transition-colors cursor-pointer"
                   >
-                    <ChevronLeft className="h-3 w-3" />
+                    <ChevronLeft className="h-4 w-4" />
                   </button>
+
+                  <input
+                    type="date"
+                    value={filterDate}
+                    onChange={(e) => setFilterDate(e.target.value)}
+                    className="h-8 border-0 bg-transparent px-2 text-[13px] font-semibold text-[#1D1D1F] outline-none cursor-pointer"
+                  />
+
                   <button
                     type="button"
-                    onClick={handleNextJobOrder}
-                    title="Next Job Order"
-                    className="grid h-5 w-5 place-items-center rounded border border-[#D2D2D7] bg-[#F5F5F7] hover:bg-white cursor-pointer"
+                    onClick={handleNextDate}
+                    title="Next Day"
+                    className="grid h-8 w-8 place-items-center rounded-[8px] hover:bg-white hover:text-[#0071E3] transition-colors cursor-pointer"
                   >
-                    <ChevronRight className="h-3 w-3" />
+                    <ChevronRight className="h-4 w-4" />
                   </button>
+                </div>
+
+                {/* Shift Time Dropdown */}
+                <select
+                  value={filterSlot}
+                  onChange={(e) => setFilterSlot(e.target.value)}
+                  className="h-10 rounded-[12px] border border-[#D2D2D7] bg-[#F5F5F7] px-3 text-[13px] font-semibold text-[#1D1D1F] outline-none focus:border-[#0071E3] focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20 cursor-pointer"
+                >
+                  {SHIFT_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </header>
+
+            <div className="px-6 py-8">
+              {selectedJobOrder ? (
+                <ProductionLanes
+                  totals={totals}
+                  goodTotals={totals}
+                  overload={overload}
+                  selected={selectedStep}
+                  onSelectStep={toggleStep}
+                />
+              ) : (
+                <div className="grid min-h-[280px] place-items-center px-6 py-10 text-center">
+                  <div className="max-w-sm">
+                    <span className="mx-auto grid h-14 w-14 place-items-center rounded-[16px] bg-[rgba(0,113,227,0.08)]">
+                      <ClipboardList className="h-6 w-6 text-[#0071E3]" strokeWidth={1.5} />
+                    </span>
+                    <p className="mt-5 text-[15px] font-semibold tracking-[-0.01em] text-[#1D1D1F]">
+                      No Job Order Selected
+                    </p>
+                    <p className="mt-2 text-[13px] leading-[1.5] text-[#6E6E73]">
+                      Pick a Job Order from the cards on the right, or create a new one to start
+                      tracking output across the production flow.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setShowNewOrder(true)}
+                      className="btn-primary mt-6"
+                    >
+                      <Plus className="h-4 w-4" strokeWidth={1.5} />
+                      Create Job Order
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
-
-            <select
-              id="job-order"
-              value={selectedJobOrderId ?? ""}
-              onChange={(e) => handleOrderChange(e.target.value)}
-              className="h-10 w-full rounded-[10px] border border-[#D2D2D7] bg-white px-3 text-[13px] font-bold text-[#1D1D1F] outline-none focus:border-[#0071E3] cursor-pointer"
-            >
-              {loading ? (
-                <option value="">Loading Job Orders...</option>
-              ) : jobOrders.length === 0 ? (
-                <option value="">No Job Orders found</option>
-              ) : (
-                jobOrders.map((order) => (
-                  <option key={order.id} value={order.id}>
-                    {order.id} — {order.brand || "Standard"} ({order.workOrder})
-                  </option>
-                ))
-              )}
-            </select>
-
-            {selectedJobOrder && (
-              <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                <span className="rounded-full bg-[#0071E3] px-2.5 py-0.5 text-[11px] font-bold text-white">
-                  {selectedJobOrder.id}
-                </span>
-                <span className="text-[13px] font-bold text-[#1D1D1F]">
-                  {selectedJobOrder.brand || "Standard"}
-                </span>
-                <span className="text-[11px] font-semibold text-[#6E6E73]">
-                  ({selectedJobOrder.workOrder})
-                </span>
-                <span className="ml-auto inline-flex items-center gap-1 text-[10px] font-bold text-[#34C759]">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#34C759]" />
-                  Active
-                </span>
-              </div>
-            )}
-          </div>
+          </section>
         </div>
 
-        {/* Card 2: Work Order Requirements */}
-        <div className="flex flex-col justify-between rounded-[16px] border border-[#D2D2D7] bg-white p-5 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#6E6E73]">
-                Target Requirements
-              </span>
-              <span className="text-[11px] font-bold text-[#0071E3]">
-                Total: {targetTotal} units
-              </span>
-            </div>
-
-            {selectedJobOrder ? (
-              <div className="text-[13px] font-medium text-[#1D1D1F] space-y-1">
-                <p>
-                  CNF: {selectedJobOrder.cnf || 0} · CF: {selectedJobOrder.cf || 0} · CN: {selectedJobOrder.cn || selectedJobOrder.c || 0}
-                </p>
-                {selectedJobOrder.otherItems && selectedJobOrder.otherItems.length > 0 && (
-                  <p className="text-[12px] text-[#6E6E73] truncate">
-                    Others: {selectedJobOrder.otherItems.map((i) => `${i.label}: ${i.qty}`).join(", ")}
-                  </p>
-                )}
-              </div>
-            ) : (
-              <p className="text-[12px] text-[#6E6E73]">No order selected</p>
-            )}
-          </div>
-        </div>
-
-        {/* Card 3: Completion Progress */}
-        <div className="flex flex-col justify-between rounded-[16px] border border-[#D2D2D7] bg-white p-5 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#6E6E73]">
-                Completion Rate
-              </span>
-              <span className="text-[20px] font-bold tabular tracking-tight text-[#0071E3]">
-                {completionPercent}%
-              </span>
-            </div>
-
-            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[#E5E5EA]">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-[#0071E3] to-[#34C759] transition-all duration-500"
-                style={{ width: `${completionPercent}%` }}
-              />
-            </div>
-            <p className="mt-2 text-[11px] font-medium text-[#6E6E73]">
-              <strong>{goodTotal}</strong> of <strong>{targetTotal}</strong> finished units
-            </p>
-          </div>
-        </div>
-
-        {/* Card 4: Actions & Quick Controls */}
-        <div className="flex flex-col justify-between rounded-[16px] border border-[#D2D2D7] bg-white p-5 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
-          <div>
-            <span className="block mb-2 text-[11px] font-bold uppercase tracking-[0.08em] text-[#6E6E73]">
-              Quick Controls
-            </span>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={loadStepTotals}
-                className="btn-secondary h-9 text-[12px]"
-                title="Sync Firestore totals"
-              >
-                <RefreshCw className={`h-3.5 w-3.5 ${loadingTotals ? "animate-spin" : ""}`} />
-                Sync
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowNewOrder((v) => !v)}
-                className="btn-secondary h-9 text-[12px]"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                + New
-              </button>
-            </div>
-          </div>
-
+        {/* ── Right Sidebar: KPI Cards & Standalone Log Productivity Action ────── */}
+        <div className="space-y-3.5 lg:col-span-4 xl:col-span-3">
+          {/* Standalone Primary Action Button */}
           <button
             type="button"
             onClick={openLogEntryModal}
-            className="btn-primary mt-3 h-9 w-full text-[13px] flex items-center justify-center gap-1.5 cursor-pointer"
+            className="btn-primary h-11 w-full text-[14px] font-bold flex items-center justify-center gap-2 cursor-pointer shadow-[0_4px_14px_rgba(0,113,227,0.28)] hover:shadow-[0_6px_20px_rgba(0,113,227,0.38)] transition-all rounded-[14px]"
           >
-            <Plus className="h-4 w-4" />
-            <span>Log Production Entry</span>
+            <Plus className="h-4.5 w-4.5" strokeWidth={2} />
+            <span>Log Productivity</span>
           </button>
-        </div>
-      </section>
 
-      {showNewOrder && (
-        <section className="mt-4 rounded-[16px] border border-[#D2D2D7] bg-white p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
-          <NewJobOrderForm
-            onSubmit={handleNewOrder}
-            onCancel={() => setShowNewOrder(false)}
-          />
-        </section>
-      )}
-
-      {/* ── Overload banner ──────────────────────────────────────────────── */}
-      {overload && (
-        <div className="mt-4 flex items-center gap-2.5 rounded-[12px] border border-[#ff9f0a]/30 bg-[#ff9f0a]/08 px-4 py-3">
-          <Zap className="h-4 w-4 shrink-0 text-[#ff9f0a]" fill="currentColor" />
-          <p className="text-[13px] text-[#1D1D1F]">
-            Busiest step:{" "}
-            <span className="font-semibold">
-              {overload.station} / {overload.subProcess}
-            </span>
-            <span className="text-[#6E6E73]"> ({overload.total} units)</span>
-          </p>
-        </div>
-      )}
-
-      {/* ── Serpentine Production Output Flow Canvas ────────────────────────── */}
-      <section className="mt-4 rounded-[16px] border border-[#D2D2D7] bg-white shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
-        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#D2D2D7] px-6 py-4">
-          {/* Left Title */}
-          <div>
-            <h2 className="text-[17px] font-bold tracking-tight text-[#1D1D1F]">
-              {selectedJobOrder
-                ? `Serpentine Production Output Flow — ${selectedJobOrder.id}`
-                : "Serpentine Production Output Flow"}
-            </h2>
-            <p className="mt-0.5 text-[12px] text-[#6E6E73]">
-              Real-time unit tracking across all 5 manufacturing stations & finished storage
-            </p>
-          </div>
-
-          {/* Right Header Filter Toolbar: < Date > & Shift Dropdown */}
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Date Navigator Controls: < date > */}
-            <div className="flex items-center gap-1 rounded-[12px] border border-[#D2D2D7] bg-[#F5F5F7] p-1">
-              <button
-                type="button"
-                onClick={handlePrevDate}
-                title="Previous Day"
-                className="grid h-8 w-8 place-items-center rounded-[8px] hover:bg-white hover:text-[#0071E3] transition-colors cursor-pointer"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-
-              <input
-                type="date"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-                className="h-8 border-0 bg-transparent px-2 text-[13px] font-semibold text-[#1D1D1F] outline-none cursor-pointer"
-              />
-
-              <button
-                type="button"
-                onClick={handleNextDate}
-                title="Next Day"
-                className="grid h-8 w-8 place-items-center rounded-[8px] hover:bg-white hover:text-[#0071E3] transition-colors cursor-pointer"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-
-            {/* Shift Time Dropdown */}
-            <select
-              value={filterSlot}
-              onChange={(e) => setFilterSlot(e.target.value)}
-              className="h-10 rounded-[12px] border border-[#D2D2D7] bg-[#F5F5F7] px-3 text-[13px] font-semibold text-[#1D1D1F] outline-none focus:border-[#0071E3] focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20 cursor-pointer"
-            >
-              {SHIFT_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </header>
-
-        <div className="px-4 py-6">
-          {selectedJobOrder ? (
-            <ProductionLanes
-              totals={totals}
-              goodTotals={totals}
-              overload={overload}
-              selected={selectedStep}
-              onSelectStep={toggleStep}
-            />
-          ) : (
-            <div className="grid min-h-[280px] place-items-center px-6 py-10 text-center">
-              <div className="max-w-sm">
-                <span className="mx-auto grid h-14 w-14 place-items-center rounded-[16px] bg-[rgba(0,113,227,0.08)]">
-                  <ClipboardList className="h-6 w-6 text-[#0071E3]" strokeWidth={1.5} />
+          {/* Card 1: Job Order List */}
+          <div className="flex flex-col justify-between rounded-[16px] border border-[#D2D2D7] bg-white p-4 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#6E6E73]">
+                  Job Order List
                 </span>
-                <p className="mt-5 text-[15px] font-semibold tracking-[-0.01em] text-[#1D1D1F]">
-                  No Job Order Selected
-                </p>
-                <p className="mt-2 text-[13px] leading-[1.5] text-[#6E6E73]">
-                  Pick a Job Order from the card above, or create a new one to start
-                  tracking output across the production flow.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setShowNewOrder(true)}
-                  className="btn-primary mt-6"
-                >
-                  <Plus className="h-4 w-4" strokeWidth={1.5} />
-                  Create Job Order
-                </button>
+              </div>
+
+              <select
+                id="job-order"
+                value={selectedJobOrderId ?? ""}
+                onChange={(e) => handleOrderChange(e.target.value)}
+                className="h-10 w-full rounded-[10px] border border-[#D2D2D7] bg-white px-3 text-[13px] font-bold text-[#1D1D1F] outline-none focus:border-[#0071E3] cursor-pointer"
+              >
+                {loading ? (
+                  <option value="">Loading Job Orders...</option>
+                ) : jobOrders.length === 0 ? (
+                  <option value="">No Job Orders found</option>
+                ) : (
+                  jobOrders.map((order) => (
+                    <option key={order.id} value={order.id}>
+                      {order.id}{order.brand && order.brand !== "Standard" ? ` — ${order.brand}` : ""}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+          </div>
+
+          {/* Card 2: Work Orders */}
+          <div className="flex flex-col justify-between rounded-[16px] border border-[#D2D2D7] bg-white p-4 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#6E6E73]">
+                  Work Orders
+                </span>
+                <span className="rounded-full bg-[rgba(0,113,227,0.10)] px-2.5 py-0.5 text-[11px] font-extrabold text-[#0071E3]">
+                  Total Cyl: {targetTotal}
+                </span>
+              </div>
+
+              {selectedJobOrder ? (
+                <div className="text-[12px] font-medium text-[#1D1D1F] space-y-1">
+                  <p className="font-semibold text-[#1D1D1F]">
+                    CNF: {selectedJobOrder.cnf || 0} · CF: {selectedJobOrder.cf || 0} · CN: {selectedJobOrder.cn || selectedJobOrder.c || 0}
+                  </p>
+                  {selectedJobOrder.otherItems && selectedJobOrder.otherItems.length > 0 && (
+                    <p className="text-[11px] text-[#6E6E73] truncate">
+                      Others: {selectedJobOrder.otherItems.map((i) => `${i.label}: ${i.qty}`).join(", ")}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-[12px] text-[#6E6E73]">No order selected</p>
+              )}
+            </div>
+          </div>
+
+          {/* Card 3: Completion Progress */}
+          <div className="flex flex-col justify-between rounded-[16px] border border-[#D2D2D7] bg-white p-4 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#6E6E73]">
+                  Completion Rate
+                </span>
+                <span className="text-[18px] font-bold tabular tracking-tight text-[#0071E3]">
+                  {completionPercent}%
+                </span>
+              </div>
+
+              <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[#E5E5EA]">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[#0071E3] to-[#34C759] transition-all duration-500"
+                  style={{ width: `${completionPercent}%` }}
+                />
+              </div>
+              <p className="mt-2 text-[11px] font-medium text-[#6E6E73]">
+                <strong>{goodTotal}</strong> of <strong>{targetTotal}</strong> finished cyl
+              </p>
+            </div>
+          </div>
+
+          {/* Card 4: Buffer & Rejects Storage */}
+          <div className="flex flex-col justify-between rounded-[16px] border border-[#D2D2D7] bg-white p-4 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#6E6E73]">
+                  Buffer & Rejects
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                <div className="rounded-[12px] border border-[#D2D2D7] bg-[#F5F5F7] p-2.5 text-center">
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-[#6E6E73]">
+                    Buffer
+                  </span>
+                  <span className="text-[20px] font-bold tabular tracking-tight text-[#1D1D1F]">
+                    {(totals["Others::Buffer"] ?? 0) + (totals["Cosmetics::Buffer"] ?? 0)}
+                  </span>
+                  <span className="block text-[9px] text-[#6E6E73] font-semibold">cylinders</span>
+                </div>
+
+                <div className="rounded-[12px] border border-[#D2D2D7] bg-[#F5F5F7] p-2.5 text-center">
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-[#6E6E73]">
+                    Reject
+                  </span>
+                  <span className="text-[20px] font-bold tabular tracking-tight text-[#1D1D1F]">
+                    {(totals["Others::Reject"] ?? 0) + (totals["Cosmetics::Reject"] ?? 0)}
+                  </span>
+                  <span className="block text-[9px] text-[#6E6E73] font-semibold">cylinders</span>
+                </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
-      </section>
+      </div>
 
       {/* ── Confirm Job Order Modal for Log Entry ─────────────────────────── */}
       {isLogEntryModalOpen && (
@@ -542,9 +509,11 @@ export function Dashboard() {
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-[14px] text-[#0071E3]">{jo.id}</span>
-                          <span className="font-semibold text-[13px] text-[#1D1D1F]">
-                            — {jo.brand || "Standard Brand"}
-                          </span>
+                          {jo.brand && jo.brand !== "Standard" && jo.brand !== "Standard Brand" && (
+                            <span className="font-semibold text-[13px] text-[#1D1D1F]">
+                              — {jo.brand}
+                            </span>
+                          )}
                         </div>
                         <div className="flex flex-wrap items-center gap-3 text-[11px] font-medium text-[#6E6E73]">
                           <span>CNF: <strong className="text-[#1D1D1F]">{jo.cnf ?? 0}</strong></span>

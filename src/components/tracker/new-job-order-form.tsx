@@ -22,11 +22,10 @@ export function NewJobOrderForm({
   const submit = (event: FormEvent) => {
     event.preventDefault();
     const next: FormErrors = {};
-    if (!workOrderNumber.trim()) next.workOrderNumber = "Work order number is required.";
-    if (!brandName.trim()) next.brandName = "Brand name is required.";
+    if (!workOrderNumber.trim()) next.workOrderNumber = "JO # is required.";
     setErrors(next);
     if (Object.keys(next).length > 0) return;
-    onSubmit(workOrderNumber.trim(), brandName.trim());
+    onSubmit(workOrderNumber.trim(), brandName.trim() || "Standard");
   };
 
   return (
@@ -35,19 +34,20 @@ export function NewJobOrderForm({
         <div>
           <label
             htmlFor="new-wo"
-            className="mb-1.5 block text-[12px] font-medium"
+            className="mb-1.5 block text-[13px] font-bold text-[#1D1D1F]"
           >
-            Work order #
+            JO # <span className="text-[#0071E3]">*</span>
           </label>
           <input
             id="new-wo"
             value={workOrderNumber}
             onChange={(e) => setWorkOrderNumber(e.target.value)}
-            placeholder="e.g. WO-2411"
+            placeholder="e.g. 21 or JO-21"
             className={cn(
-              "input-field",
+              "input-field text-[14px]",
               errors.workOrderNumber && "border-destructive",
             )}
+            autoFocus
           />
           {errors.workOrderNumber && (
             <p className="mt-1.5 text-[12px] font-medium text-destructive">
@@ -57,24 +57,16 @@ export function NewJobOrderForm({
         </div>
 
         <div>
-          <label htmlFor="new-brand" className="mb-1.5 block text-[12px] font-medium">
-            Brand name
+          <label htmlFor="new-brand" className="mb-1.5 block text-[13px] font-medium text-[#6E6E73]">
+            Brand Name <span className="text-[11px] text-[#8E8E93]">(Optional)</span>
           </label>
           <input
             id="new-brand"
             value={brandName}
             onChange={(e) => setBrandName(e.target.value)}
-            placeholder="e.g. SafeAir"
-            className={cn(
-              "input-field",
-              errors.brandName && "border-destructive",
-            )}
+            placeholder="e.g. Standard"
+            className="input-field text-[14px]"
           />
-          {errors.brandName && (
-            <p className="mt-1.5 text-[12px] font-medium text-destructive">
-              {errors.brandName}
-            </p>
-          )}
         </div>
       </div>
 
@@ -84,7 +76,7 @@ export function NewJobOrderForm({
           className="btn-primary"
         >
           <Plus className="h-4 w-4" strokeWidth={1.75} />
-          Create job order
+          Save JO
         </button>
         <button
           type="button"

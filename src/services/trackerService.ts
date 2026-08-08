@@ -80,11 +80,11 @@ export async function syncFromGoogleSheets(): Promise<{
 }
 
 // ─── Job Orders ──────────────────────────────────────────────────────────────
-export function createJobOrder(workOrderNumber: string, brandName: string): JobOrder {
+export function createJobOrder(workOrderNumber: string, brandName: string = "Standard"): JobOrder {
   const order: JobOrder = {
     id: uid("jo"),
     workOrderNumber: workOrderNumber.trim(),
-    brandName: brandName.trim(),
+    brandName: (brandName || "Standard").trim(),
     createdAt: new Date().toISOString(),
   };
   write(KEY_JOB_ORDERS, [order, ...listJobOrders()]);

@@ -4,6 +4,7 @@ export const DEPARTMENTS = [
   "CTC2",
   "Painting",
   "Cosmetics",
+  "Others",
 ] as const;
 
 export type DepartmentName = (typeof DEPARTMENTS)[number];

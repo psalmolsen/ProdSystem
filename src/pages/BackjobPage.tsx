@@ -443,7 +443,7 @@ export function BackjobPage() {
                   </option>
                   {jobOrders.map((jo) => (
                     <option key={jo.id} value={jo.id}>
-                      {jo.id} — {jo.brand || "Standard Brand"} ({jo.workOrder})
+                      {jo.id}{jo.brand && jo.brand !== "Standard" && jo.brand !== "Standard Brand" ? ` — ${jo.brand}` : ""}
                     </option>
                   ))}
                 </select>

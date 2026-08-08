@@ -162,17 +162,13 @@ export function JobOrdersPage() {
   // ── Create Submission ───────────────────────────────────────────────────────
   const handleCreateSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!brandInput.trim()) {
-      setFormError("Brand name is required.");
-      return;
-    }
 
     setSubmitting(true);
     setFormError("");
     try {
       await createJobOrder({
-        joNumber: joNumberInput,
-        brand: brandInput,
+        joNumber: joNumberInput.trim() || undefined,
+        brand: brandInput.trim() || "Standard",
         cnf: cnfInput,
         cf: cfInput,
         cn: cnInput,

@@ -25,7 +25,7 @@ export interface JobOrder {
 export interface CreateJobOrderInput {
   joNumber?: string;
   workOrder?: string;
-  brand: string;
+  brand?: string;
   cnf?: number | string;
   cf?: number | string;
   cn?: number | string;

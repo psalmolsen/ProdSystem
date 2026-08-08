@@ -33,16 +33,20 @@ function sanitizeOtherItems(items?: OtherWorkOrderItem[]): OtherWorkOrderItem[] 
 export async function createJobOrder(
   input: CreateJobOrderInput,
 ): Promise<JobOrder> {
-  const rawJoNumber = input.joNumber?.trim() || "";
-  const joId = rawJoNumber
-    ? (rawJoNumber.toUpperCase().startsWith("JO-") ? rawJoNumber.toUpperCase() : `JO-${rawJoNumber}`)
-    : generateJobOrderId();
+  const rawJoNumber = input.joNumber?.trim() || input.workOrder?.trim() || "";
+  let joId = "";
+  if (rawJoNumber) {
+    const cleanNum = rawJoNumber.toUpperCase().replace(/^(JO|WO)-?/, "");
+    joId = `JO-${cleanNum || rawJoNumber.toUpperCase()}`;
+  } else {
+    joId = generateJobOrderId();
+  }
 
   const docRef = getJobOrderDocRef(joId);
   const nowIso = new Date().toISOString();
 
   const workOrderVal = input.workOrder?.trim() || `WO-${joId.replace(/^JO-/, "")}`;
-  const brandVal = input.brand.trim();
+  const brandVal = input.brand ? input.brand.trim() : "Standard";
   const cnfVal = Number(input.cnf) || 0;
   const cfVal = Number(input.cf) || 0;
   const cnVal = Number(input.cn) || 0;
