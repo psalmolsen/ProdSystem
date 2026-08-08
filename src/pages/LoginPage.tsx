@@ -78,11 +78,7 @@ export function LoginPage() {
         {/* Feature Highlights */}
         <div className="relative z-10 my-12 space-y-8">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#0071E3]/40 bg-[#0071E3]/15 px-3.5 py-1.5 text-[12px] font-semibold text-[#64B5F6]">
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>Plant Operations Portal</span>
-            </div>
-            <h2 className="mt-4 text-[32px] font-bold leading-tight tracking-tight text-white sm:text-[38px]">
+            <h2 className="text-[32px] font-bold leading-tight tracking-tight text-white sm:text-[38px]">
               CCB Management System
             </h2>
             <p className="mt-3 text-[14px] leading-relaxed text-[#A1A1A6]">
@@ -91,17 +87,11 @@ export function LoginPage() {
           </div>
 
           <div className="space-y-3 border-t border-white/10 pt-6">
-            <div className="flex items-center gap-3 text-[13px] text-[#E5E5EA]">
-              <ShieldCheck className="h-4 w-4 text-[#34C759] shrink-0" />
+            <div className="text-[13px] text-[#E5E5EA]">
               <span>Multi-variant capacity tracking (11kg, 22kg, 50kg)</span>
             </div>
-            <div className="flex items-center gap-3 text-[13px] text-[#E5E5EA]">
-              <Factory className="h-4 w-4 text-[#0071E3] shrink-0" />
+            <div className="text-[13px] text-[#E5E5EA]">
               <span>Real-time station workflow & bottleneck monitoring</span>
-            </div>
-            <div className="flex items-center gap-3 text-[13px] text-[#E5E5EA]">
-              <ShieldCheck className="h-4 w-4 text-[#34C759] shrink-0" />
-              <span>Authorized Google single sign-on</span>
             </div>
           </div>
         </div>
