@@ -62,14 +62,14 @@ export function LoginPage() {
         <div className="relative z-10">
           <div className="flex items-center gap-3.5">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white p-2 shadow-md">
-              <img src={ccbLogo} alt="Company Logo" className="h-full w-full object-contain" />
+              <img src={ccbLogo} alt="CCB Logo" className="h-full w-full object-contain" />
             </div>
             <div>
               <h1 className="text-[19px] font-bold tracking-tight text-white">
-                CCB Production Execution System
+                CCB Management System
               </h1>
               <p className="text-[12px] font-medium text-[#A1A1A6]">
-                LPG Cylinder Requalification MES
+                Centralized Cylinder Bottling · LPG Requalification
               </p>
             </div>
           </div>
@@ -80,24 +80,28 @@ export function LoginPage() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-[#0071E3]/40 bg-[#0071E3]/15 px-3.5 py-1.5 text-[12px] font-semibold text-[#64B5F6]">
               <Sparkles className="h-3.5 w-3.5" />
-              <span>Plant Operations Portal</span>
+              <span>LPG Cylinder Requalification Plant</span>
             </div>
             <h2 className="mt-4 text-[30px] font-bold leading-tight tracking-tight text-white sm:text-[36px]">
-              Streamlined authentication for plant execution & tracking.
+              Powering Precision & Quality in LPG Cylinder Requalification.
             </h2>
             <p className="mt-3 text-[14px] leading-relaxed text-[#A1A1A6]">
-              Secure single sign-on access to production tracking, station logs, and requalification metrics.
+              Comprehensive tracking for 11kg, 22kg, and 50kg LPG cylinder variants across CTC1, CTC2, Hotworks, Painting, and Cosmetics.
             </p>
           </div>
 
           <div className="space-y-3 border-t border-white/10 pt-6">
             <div className="flex items-center gap-3 text-[13px] text-[#E5E5EA]">
               <ShieldCheck className="h-4 w-4 text-[#34C759] shrink-0" />
-              <span>Google Enterprise Authentication</span>
+              <span>Multi-variant capacity breakdown (11kg, 22kg, 50kg)</span>
             </div>
             <div className="flex items-center gap-3 text-[13px] text-[#E5E5EA]">
               <Factory className="h-4 w-4 text-[#0071E3] shrink-0" />
-              <span>Persistent Operational Session</span>
+              <span>Real-time station workflow & bottleneck monitoring</span>
+            </div>
+            <div className="flex items-center gap-3 text-[13px] text-[#E5E5EA]">
+              <ShieldCheck className="h-4 w-4 text-[#34C759] shrink-0" />
+              <span>Enterprise Google Authentication & Role Security</span>
             </div>
           </div>
         </div>

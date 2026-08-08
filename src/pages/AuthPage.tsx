@@ -68,10 +68,10 @@ export function AuthPage() {
             </div>
             <div>
               <h1 className="text-[18px] font-bold tracking-tight text-white">
-                CCB Production Execution System
+                CCB Management System
               </h1>
               <p className="text-[12px] font-medium text-[#A1A1A6]">
-                LPG Cylinder Requalification MES
+                Centralized Cylinder Bottling · LPG Requalification
               </p>
             </div>
           </div>
@@ -82,28 +82,28 @@ export function AuthPage() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-[#0071E3]/40 bg-[#0071E3]/15 px-3.5 py-1.5 text-[12px] font-semibold text-[#64B5F6]">
               <Sparkles className="h-3.5 w-3.5" />
-              <span>Plant Floor Station Access</span>
+              <span>LPG Cylinder Requalification Plant</span>
             </div>
             <h2 className="mt-4 text-[32px] font-bold leading-tight tracking-tight text-white sm:text-[38px]">
-              Fast 2-hour interval tracking for plant operators.
+              Powering Precision & Quality in LPG Cylinder Requalification.
             </h2>
             <p className="mt-3 text-[15px] leading-relaxed text-[#A1A1A6]">
-              Real-time synchronization with Cloud Firestore, serpentine visual flow, and automated completion metrics.
+              Comprehensive tracking for 11kg, 22kg, and 50kg LPG cylinder variants across CTC1, CTC2, Hotworks, Painting, and Cosmetics.
             </p>
           </div>
 
           <div className="space-y-3.5 border-t border-white/10 pt-6">
             <div className="flex items-center gap-3 text-[14px] text-[#E5E5EA]">
               <CheckCircle2 className="h-5 w-5 text-[#34C759] shrink-0" />
-              <span>Role-based access control (Operator, Supervisor, Manager)</span>
+              <span>Multi-variant capacity breakdown (11kg, 22kg, 50kg)</span>
             </div>
             <div className="flex items-center gap-3 text-[14px] text-[#E5E5EA]">
               <CheckCircle2 className="h-5 w-5 text-[#34C759] shrink-0" />
-              <span>Direct Cloud Firestore real-time state engine</span>
+              <span>Real-time station workflow & bottleneck monitoring</span>
             </div>
             <div className="flex items-center gap-3 text-[14px] text-[#E5E5EA]">
               <CheckCircle2 className="h-5 w-5 text-[#34C759] shrink-0" />
-              <span>High-touch target UI optimized for plant floor tablets</span>
+              <span>Enterprise Google Authentication & Role Security</span>
             </div>
           </div>
         </div>
