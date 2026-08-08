@@ -107,8 +107,7 @@ export function BrandSummaryPage() {
       const deliveredCount = totals["Cosmetics::Good"] ?? 0;
       const rejectCount = totals["Cosmetics::Reject"] ?? 0;
       const overallTotal = Object.values(totals).reduce((sum, v) => sum + v, 0);
-      const loggedBuffer = (totals["Others::Buffer"] ?? 0) + (totals["Cosmetics::Buffer"] ?? 0);
-      const bufferedCount = loggedBuffer > 0 ? loggedBuffer : Math.max(0, overallTotal - deliveredCount - rejectCount);
+      const bufferedCount = (totals["Others::Buffer"] ?? 0) + (totals["Cosmetics::Buffer"] ?? 0);
 
       return {
         jobOrder: jo,
@@ -215,7 +214,7 @@ export function BrandSummaryPage() {
               {grandTotals.buffered}
             </p>
             <p className="mt-1 text-[12px] font-medium text-[#6E6E73]">
-              Paso-brand spare tanks for client QC replacements
+              Buffer inventory tanks for client QC replacements
             </p>
           </div>
 
