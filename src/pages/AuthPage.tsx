@@ -71,7 +71,7 @@ export function AuthPage() {
                 CCB Management System
               </h1>
               <p className="text-[12px] font-medium text-[#A1A1A6]">
-                Centralized Cylinder Bottling · LPG Requalification
+                Centralized Cylinder Bottling
               </p>
             </div>
           </div>
@@ -82,20 +82,20 @@ export function AuthPage() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-[#0071E3]/40 bg-[#0071E3]/15 px-3.5 py-1.5 text-[12px] font-semibold text-[#64B5F6]">
               <Sparkles className="h-3.5 w-3.5" />
-              <span>LPG Cylinder Requalification Plant</span>
+              <span>Plant Operations Portal</span>
             </div>
             <h2 className="mt-4 text-[32px] font-bold leading-tight tracking-tight text-white sm:text-[38px]">
-              Powering Precision & Quality in LPG Cylinder Requalification.
+              CCB Management System
             </h2>
             <p className="mt-3 text-[15px] leading-relaxed text-[#A1A1A6]">
-              Comprehensive tracking for 11kg, 22kg, and 50kg LPG cylinder variants across CTC1, CTC2, Hotworks, Painting, and Cosmetics.
+              Real-time LPG cylinder requalification and production tracking portal for 11kg, 22kg, and 50kg variants.
             </p>
           </div>
 
           <div className="space-y-3.5 border-t border-white/10 pt-6">
             <div className="flex items-center gap-3 text-[14px] text-[#E5E5EA]">
               <CheckCircle2 className="h-5 w-5 text-[#34C759] shrink-0" />
-              <span>Multi-variant capacity breakdown (11kg, 22kg, 50kg)</span>
+              <span>Multi-variant capacity tracking (11kg, 22kg, 50kg)</span>
             </div>
             <div className="flex items-center gap-3 text-[14px] text-[#E5E5EA]">
               <CheckCircle2 className="h-5 w-5 text-[#34C759] shrink-0" />
@@ -103,7 +103,7 @@ export function AuthPage() {
             </div>
             <div className="flex items-center gap-3 text-[14px] text-[#E5E5EA]">
               <CheckCircle2 className="h-5 w-5 text-[#34C759] shrink-0" />
-              <span>Enterprise Google Authentication & Role Security</span>
+              <span>Authorized Google single sign-on</span>
             </div>
           </div>
         </div>
