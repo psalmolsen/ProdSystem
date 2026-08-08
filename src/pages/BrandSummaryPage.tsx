@@ -141,8 +141,8 @@ export function BrandSummaryPage() {
         filteredList = list.filter(
           (m) =>
             m.jobOrder.id.toLowerCase().includes(qLower) ||
-            m.jobOrder.workOrder.toLowerCase().includes(qLower) ||
-            m.jobOrder.brand.toLowerCase().includes(qLower),
+            m.jobOrder.brand.toLowerCase().includes(qLower) ||
+            `cnf:${m.jobOrder.cnf} cf:${m.jobOrder.cf} cn:${m.jobOrder.cn}`.toLowerCase().includes(qLower),
         );
       }
 
@@ -245,20 +245,6 @@ export function BrandSummaryPage() {
         <Panel
           title="Brand Division Breakdown"
           description="Tank totals (Delivered, Buffered, Reject, Overall) categorized per Brand Name."
-          actions={
-            <button
-              type="button"
-              onClick={() => {
-                loadJobOrders();
-                loadAllStepTotals();
-              }}
-              className="btn-secondary flex items-center gap-2 cursor-pointer text-[12px]"
-              title="Refresh Firestore totals"
-            >
-              <RefreshCw className={cn("h-3.5 w-3.5", loadingTotals ? "animate-spin" : "")} />
-              <span>Sync Totals</span>
-            </button>
-          }
         >
           <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
             {/* Search Input */}
@@ -363,8 +349,8 @@ export function BrandSummaryPage() {
                       <thead>
                         <tr className="border-b border-[#D2D2D7] bg-white text-[11px] font-bold uppercase tracking-[0.05em] text-[#6E6E73]">
                           <th className="px-5 py-3 min-w-[110px]">JO#</th>
-                          <th className="px-5 py-3 min-w-[120px]">Work Order</th>
-                          <th className="px-5 py-3 min-w-[220px]">Target Requirements</th>
+                          <th className="px-5 py-3 min-w-[240px]">Work Order (CNF · CF · CN)</th>
+                          <th className="px-5 py-3 min-w-[110px] text-right">Target Demand</th>
                           <th className="px-5 py-3 min-w-[100px] text-right">Delivered</th>
                           <th className="px-5 py-3 min-w-[100px] text-right">Buffered</th>
                           <th className="px-5 py-3 min-w-[100px] text-right">Reject</th>
@@ -387,11 +373,11 @@ export function BrandSummaryPage() {
                               <td className="px-5 py-3.5 font-bold text-[#0071E3]">
                                 {m.jobOrder.id}
                               </td>
-                              <td className="px-5 py-3.5 font-semibold text-[#1D1D1F]">
-                                {m.jobOrder.workOrder}
-                              </td>
                               <td className="px-5 py-3.5 font-medium text-[#1D1D1F]">
                                 {reqParts.join(" · ")}
+                              </td>
+                              <td className="px-5 py-3.5 text-right font-bold text-[#0071E3]">
+                                {m.targetTotal} cyl
                               </td>
                               <td className="px-5 py-3.5 text-right font-bold text-[#1D1D1F]">
                                 {m.deliveredCount}
