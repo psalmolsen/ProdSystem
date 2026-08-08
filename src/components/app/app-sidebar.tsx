@@ -7,7 +7,7 @@ import {
   LogOut,
   Tag,
 } from "lucide-react";
-import logo from "@/assets/ccb-logo.png.asset.json";
+import logo from "@/assets/ccb-logo.png";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -28,13 +28,13 @@ export function AppSidebar({ activePath }: { activePath: string }) {
       {/* Brand header */}
       <div className="flex h-[72px] items-center gap-3 border-b border-[#D2D2D7] px-6">
         <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[10px] bg-[#0071E3]/10">
-          <img src={logo.src} alt="CCB Logo" className="h-[22px] w-[22px] object-contain" />
+          <img src={logo} alt="CCB Logo" className="h-[28px] w-[28px] object-contain" />
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate text-[14px] font-semibold tracking-[-0.01em] text-[#1D1D1F]">
             CCB Production
           </p>
-          <p className="truncate text-[11px] text-[#6E6E73]">Manufacturing System</p>
+          <p className="truncate text-[11px] text-[#6E6E73]">Management System</p>
         </div>
       </div>
 
